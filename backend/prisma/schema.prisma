@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,107 +7,92 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// User model
 model User {
-  id            String    @id @default(uuid())
-  email         String    @unique
+  id            String         @id @default(uuid())
+  email         String         @unique
   password      String
   name          String
   avatar        String?
   bio           String?
-  interests     String[]  @default([])
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  // Relations
-  createdEvents Event[]           @relation("EventCreator")
+  interests     String[]       @default([])
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   eventMembers  EventMember[]
-  friendships   Friendship[]      @relation("UserFriendships")
-  friendOf      Friendship[]       @relation("FriendOf")
+  createdEvents Event[]        @relation("EventCreator")
+  friendOf      Friendship[]   @relation("FriendOf")
+  friendships   Friendship[]   @relation("UserFriendships")
   messages      Message[]
   notifications Notification[]
 
   @@map("users")
 }
 
-// Event model
 model Event {
-  id          String   @id @default(uuid())
+  id          String        @id @default(uuid())
   title       String
   description String
   date        DateTime
   latitude    Float
   longitude   Float
-  maxMembers  Int      @default(10)
+  maxMembers  Int           @default(10)
   category    String
-  tags        String[] @default([])
-  status      String   @default("active") // active, full, cancelled
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
+  tags        String[]      @default([])
+  status      String        @default("active")
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
   creatorId   String
-  creator     User          @relation("EventCreator", fields: [creatorId], references: [id])
   members     EventMember[]
+  creator     User          @relation("EventCreator", fields: [creatorId], references: [id])
   messages    Message[]
 
   @@map("events")
 }
 
-// Event Member (join table)
 model EventMember {
-  id        String   @id @default(uuid())
-  userId    String
-  eventId   String
-  joinedAt  DateTime @default(now())
-
-  user      User     @relation(fields: [userId], references: [id])
-  event     Event    @relation(fields: [eventId], references: [id])
+  id       String   @id @default(uuid())
+  userId   String
+  eventId  String
+  joinedAt DateTime @default(now())
+  event    Event    @relation(fields: [eventId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, eventId])
   @@map("event_members")
 }
 
-// Friendship model
 model Friendship {
   id        String   @id @default(uuid())
   userId    String
   friendId  String
-  status    String   @default("pending") // pending, accepted, blocked
+  status    String   @default("pending")
   createdAt DateTime @default(now())
-
-  user      User     @relation("UserFriendships", fields: [userId], references: [id])
   friend    User     @relation("FriendOf", fields: [friendId], references: [id])
+  user      User     @relation("UserFriendships", fields: [userId], references: [id])
 
   @@unique([userId, friendId])
   @@map("friendships")
 }
 
-// Message model
 model Message {
   id        String   @id @default(uuid())
   content   String
   createdAt DateTime @default(now())
-
   userId    String
   eventId   String?
-  user      User     @relation(fields: [userId], references: [id])
   event     Event?   @relation(fields: [eventId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
   @@map("messages")
 }
 
-// Notification model
 model Notification {
   id        String   @id @default(uuid())
-  type      String   // friend_request, event_join, message, etc.
+  type      String
   message   String
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
-
   userId    String
   user      User     @relation(fields: [userId], references: [id])
 
   @@map("notifications")
 }
-
