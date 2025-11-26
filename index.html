@@ -246,14 +246,14 @@
             </div>
 
             <!-- Create Event Floating Button -->
-            <button onclick="showCreateEventModal()" class="absolute bottom-6 right-6 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-all transform hover:scale-110">
+            <button onclick="showCreateEventModal()" class="fixed bottom-10 right-10 bg-blue-600 text-white p-4 rounded-full shadow-2xl hover:bg-blue-700 transition-all transform hover:scale-110 z-[5000]">
                 <i class="fas fa-plus text-xl"></i>
             </button>
         </div>
     </div>
 
     <!-- Create Event Modal -->
-    <div id="createEventModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+    <div id="createEventModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[9999] flex items-center justify-center">
         <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4 transform transition-all">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-lg font-semibold">Create New Event</h3>
