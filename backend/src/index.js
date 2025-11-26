@@ -7,6 +7,7 @@ import { prisma } from './db.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { authenticateToken } from './middleware/auth.js';
+import eventsRouter from './routes/events.js';
 
 dotenv.config();
 
@@ -150,6 +151,9 @@ app.get('/api/auth/me', authenticateToken, (req, res) => {
   // If authenticateToken succeeds, it attaches the user to req.user
   res.json({ user: req.user });
 });
+
+// ===== Events routes =====
+app.use('/api/events', eventsRouter);
 
 // Basic route
 app.get('/', (req, res) => {
