@@ -422,36 +422,38 @@
         }
 
         // gets the values from the input fields and check if the user exist or not
-        function handleLogin() {
-            const username = document.getElementById('loginUsername').value
-            const password = document.getElementById('loginPassword').value
+// UPDATED: Async Login Handler
+async function handleLogin() {
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
 
-            const result = app.login(username, password)
+            // Show loading state
+            const button = document.querySelector('#loginFormElement button[type="submit"]');
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Connecting...';
+            button.disabled = true;
+
+            // Wait for backend response
+            const result = await app.login(username, password);
 
             if (result.success) {
-                showNotification('Login successful! Redirecting...', 'success')
-
-                // Add loading animation
-                const button = document.querySelector(
-                    '#loginFormElement button[type="submit"]'
-                )
-                button.innerHTML =
-                    '<i class="fas fa-spinner fa-spin mr-2"></i>Signing In...'
-                button.disabled = true
-
+                showNotification('Login successful! Redirecting...', 'success');
                 setTimeout(() => {
-                    window.location.href = 'index.html'
-                }, 1500)
+                    window.location.href = 'index.html';
+                }, 1000);
             } else {
-                showNotification(result.message, 'error')
+                showNotification(result.message, 'error');
+                
+                // Reset button
+                button.innerHTML = originalText;
+                button.disabled = false;
 
-                // Shake animation for error
                 anime({
                     targets: '#loginForm',
                     translateX: [-10, 10, -10, 10, 0],
                     duration: 500,
                     easing: 'easeInOutQuart',
-                })
+                });
             }
         }
 

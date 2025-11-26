@@ -490,7 +490,7 @@
             delete window.selectedLocation;
         }
 
-        function createEvent() {
+        async function createEvent() {
             const title = document.getElementById('eventTitle').value;
             const description = document.getElementById('eventDescription').value;
             const category = document.getElementById('eventCategory').value;
@@ -506,7 +506,7 @@
                 location = app.currentUser ? app.currentUser.location : [52.2297, 21.0122];
             }
             
-            const result = app.createEvent(title, description, category, location, locationInput, datetime, maxParticipants);
+            const result = await app.createEvent(title, description, category, location, locationInput, datetime, maxParticipants);
             
             if (result.success) {
                 hideCreateEventModal();

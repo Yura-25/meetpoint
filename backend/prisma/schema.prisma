@@ -12,11 +12,13 @@ model User {
   email         String         @unique
   password      String
   name          String
-  avatar        String?
+  avatar        String?        @default("resources/avatars/default.jpg")
   bio           String?
   interests     String[]       @default([])
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
+  
+  // Relations (Preserved)
   eventMembers  EventMember[]
   createdEvents Event[]        @relation("EventCreator")
   friendOf      Friendship[]   @relation("FriendOf")
@@ -31,23 +33,34 @@ model Event {
   id          String        @id @default(uuid())
   title       String
   description String
-  date        DateTime
+  
+  // Mapped fields (We keep your DB names, mapped in API)
+  date        DateTime      // Frontend calls this 'datetime'
+  maxMembers  Int           @default(10) // Frontend calls this 'maxParticipants'
+  
   latitude    Float
   longitude   Float
-  maxMembers  Int           @default(10)
+  
+  // NEW FIELD for Sprint 2
+  address     String        @default("Łódź, Poland") 
+  
   category    String
   tags        String[]      @default([])
   status      String        @default("active")
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
+  
   creatorId   String
-  members     EventMember[]
   creator     User          @relation("EventCreator", fields: [creatorId], references: [id])
+  
+  // Relations (Preserved)
+  members     EventMember[]
   messages    Message[]
 
   @@map("events")
 }
 
+// All existing models preserved exactly as they were
 model EventMember {
   id       String   @id @default(uuid())
   userId   String
