@@ -70,19 +70,27 @@ class MeetPoint {
 
     // --- DATA & MAP ---
 
-    async fetchEvents() {
-        try {
-            const res = await fetch(`${this.API_URL}/events`);
-            this.events = await res.json();
-            if (this.map) this.updateMapMarkers();
-            // Helper for index.html sidebar
-            if (window.displayEvents) window.displayEvents(this.events);
-            return this.events;
-        } catch (err) {
-            console.error('Error fetching events:', err);
-            return [];
-        }
+// main.js
+
+async fetchEvents() {
+    try {
+        const res = await fetch(`${this.API_URL}/events`);
+        this.events = await res.json();
+        
+        if (this.map) this.updateMapMarkers();
+        
+        // Helper for index.html sidebar
+        if (window.displayEvents) window.displayEvents(this.events);
+
+        // [NEW] Update stats immediately after fetching data
+        if (window.updateStats) window.updateStats(); 
+
+        return this.events;
+    } catch (err) {
+        console.error('Error fetching events:', err);
+        return [];
     }
+}
 
     async initializeMap(containerId) {
         const LODZ_COORDS = [51.7592, 19.4560];
@@ -123,6 +131,8 @@ class MeetPoint {
         this.events.forEach(event => this.addEventMarker(event));
     }
 
+    // main.js
+
     addEventMarker(event) {
         if (!this.map) return;
 
@@ -131,57 +141,71 @@ class MeetPoint {
             travel: '✈️', music: '🎵', art: '🎨', tech: '💻'
         };
         const icon = categoryIcons[event.category] || '📍';
+        const creatorName = event.creator ? event.creator.username : 'Unknown';
         
-        const creatorName = event.creator ? event.creator.name : 'Unknown';
         const isJoined = this.currentUser && event.participants && event.participants.includes(this.currentUser.id);
         const isFull = event.participants ? event.participants.length >= event.maxParticipants : false;
         const participantCount = event.participants ? event.participants.length : 0;
+        
+        // Determine button class based on state
+        let btnClass = 'mp-popup-btn ';
+        let btnText = '';
+        
+        if (isJoined) {
+            btnClass += 'mp-btn-joined';
+            btnText = '<i class="fas fa-check mr-1"></i> Joined';
+        } else if (isFull) {
+            btnClass += 'mp-btn-full';
+            btnText = 'Event Full';
+        } else {
+            btnClass += 'mp-btn-join';
+            btnText = 'Join Event';
+        }
 
         const marker = L.marker([event.latitude, event.longitude]).addTo(this.map);
 
+        // CLEAN HTML: No inline styles, just referring to classes in index.html
         marker.bindPopup(`
-            <div class="p-1 min-w-[220px]">
-                <div class="flex justify-between items-start mb-2">
-                    <h3 class="font-bold text-lg text-gray-900 leading-tight">${event.title}</h3>
-                    <span class="text-xl ml-2">${icon}</span>
+            <div class="mp-popup-card">
+                <div class="mp-popup-header">
+                    <h3 class="mp-popup-title">${event.title}</h3>
+                    <span class="mp-popup-icon">${icon}</span>
                 </div>
-                <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
-                    ${event.category}
-                </span>
-                <p class="text-sm text-gray-600 mt-2 mb-3 line-clamp-2">${event.description}</p>
-                <div class="space-y-1 text-xs text-gray-500 mb-3">
-                    <div class="flex items-center">
-                        <i class="fas fa-map-marker-alt w-4 text-center mr-1"></i>
-                        <span class="truncate max-w-[180px]">${event.address}</span>
+                
+                <span class="mp-popup-category">${event.category}</span>
+                <p class="mp-popup-desc">${event.description}</p>
+                
+                <div class="mp-popup-meta">
+                    <div class="mp-meta-row">
+                        <i class="fas fa-map-marker-alt mp-meta-icon"></i>
+                        <span class="truncate">${event.address}</span>
                     </div>
-                    <div class="flex items-center">
-                        <i class="fas fa-users w-4 text-center mr-1"></i>
-                        ${participantCount}/${event.maxParticipants} joined
+                    <div class="mp-meta-row">
+                        <i class="fas fa-calendar-alt mp-meta-icon"></i>
+                        <span>${new Date(event.datetime).toLocaleDateString()}</span>
                     </div>
-                    <div class="flex items-center">
-                        <i class="fas fa-user w-4 text-center mr-1"></i>
-                        By ${creatorName}
+                    <div class="mp-meta-row">
+                        <i class="fas fa-users mp-meta-icon"></i>
+                        <span>${participantCount}/${event.maxParticipants} participants</span>
+                    </div>
+                    <div class="mp-meta-row">
+                        <i class="fas fa-user mp-meta-icon"></i>
+                        <span>By ${creatorName}</span>
                     </div>
                 </div>
+
                 <button 
                     onclick="app.joinEvent('${event.id}')" 
-                    class="w-full py-1.5 rounded text-sm font-medium transition-colors ${
-                        isJoined 
-                        ? 'bg-green-100 text-green-700 hover:bg-green-200' 
-                        : isFull 
-                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                            : 'bg-blue-600 text-white hover:bg-blue-700'
-                    }"
+                    class="${btnClass}"
                     ${isFull && !isJoined ? 'disabled' : ''}
                 >
-                    ${isJoined ? 'Joined ✓' : isFull ? 'Full' : 'Join Event'}
+                    ${btnText}
                 </button>
             </div>
         `);
 
         this.markers.push({ id: event.id, marker });
     }
-
     // --- ACTIONS ---
 
     async createEvent(title, description, category, location, address, datetime, maxParticipants) {
