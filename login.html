@@ -458,46 +458,52 @@ async function handleLogin() {
         }
 
         //gets the values from the input fields and check if the user can register or not also if the password match
-        function handleRegistration() {
-            const username = document.getElementById('registerUsername').value
-            const email = document.getElementById('registerEmail').value
-            const password = document.getElementById('registerPassword').value
-            const confirmPassword = document.getElementById('confirmPassword').value
+        // UPDATED: Async Registration Handler
+        async function handleRegistration() {
+            const username = document.getElementById('registerUsername').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
 
-            // Validation
+            // 1. Validation
             if (password !== confirmPassword) {
-                showNotification('Passwords do not match', 'error')
-                return
+                showNotification('Passwords do not match', 'error');
+                return;
             }
-
             if (password.length < 6) {
-                showNotification('Password must be at least 6 characters', 'error')
-                return
+                showNotification('Password must be at least 6 characters', 'error');
+                return;
             }
 
-            const result = app.register(username, email, password)
+            // 2. Show Loading
+            const btn = document.querySelector('#registerFormElement button[type="submit"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+            btn.disabled = true;
 
+            // 3. Call API (CRITICAL: use 'await')
+            const result = await app.register(username, email, password);
+
+            // 4. Reset Button
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+
+            // 5. Handle Result
             if (result.success) {
-                showNotification(
-                    'Registration successful! You can now login.',
-                    'success'
-                )
-
-                // Clear form and switch to login
+                showNotification('Registration successful! Please login.', 'success');
                 setTimeout(() => {
-                    document.getElementById('registerFormElement').reset()
-                    showLoginForm()
-                }, 1500)
+                    document.getElementById('registerFormElement').reset();
+                    showLoginForm();
+                }, 1500);
             } else {
-                showNotification(result.message, 'error')
-
-                // Shake animation for error
+                // If result.message is missing, show generic error
+                showNotification(result.message || 'Registration failed', 'error');
                 anime({
                     targets: '#registerForm',
                     translateX: [-10, 10, -10, 10, 0],
                     duration: 500,
-                    easing: 'easeInOutQuart',
-                })
+                    easing: 'easeInOutQuart'
+                });
             }
         }
 
