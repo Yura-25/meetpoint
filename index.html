@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MeetPoint - Discover Social Events Near You</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    
+    <!-- Anime.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    
+    <!-- Custom Styles -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .event-card {
+            transition: all 0.3s ease;
+            transform: translateY(0);
+        }
+        
+        .event-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .slide-in {
+            animation: slideIn 0.5s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.8s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .map-container {
+            height: calc(100vh - 80px);
+        }
+        
+        .sidebar {
+            height: calc(100vh - 80px);
+            overflow-y: auto;
+        }
+        
+        .category-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+        
+        .online-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            position: absolute;
+            top: 0;
+            right: 0;
+            border: 2px solid white;
+        }
+        
+        .offline-indicator {
+            background: #ef4444;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation Bar -->
+    <nav class="bg-white shadow-lg border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <!-- Logo -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-map-marker-alt text-white text-lg"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-900">MeetPoint</h1>
+                        <p class="text-xs text-gray-500">Discover events nearby</p>
+                    </div>
+                </div>
+
+                <!-- Navigation Links -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="index.html" class="text-blue-600 font-medium border-b-2 border-blue-600 pb-1">
+                        <i class="fas fa-map mr-2"></i>Map
+                    </a>
+                    <a href="events.html" class="text-gray-700 hover:text-blue-600 transition-colors">
+                        <i class="fas fa-calendar-alt mr-2"></i>Events
+                    </a>
+                    <a href="friends.html" class="text-gray-700 hover:text-blue-600 transition-colors">
+                        <i class="fas fa-users mr-2"></i>Friends
+                    </a>
+                    <a href="profile.html" class="text-gray-700 hover:text-blue-600 transition-colors">
+                        <i class="fas fa-user mr-2"></i>Profile
+                    </a>
+                </div>
+
+                <!-- User Actions -->
+                <div class="flex items-center space-x-4">
+                    <div id="userStatus" class="hidden">
+                        <div class="flex items-center space-x-2">
+                            <div class="relative">
+                                <img id="userAvatar" src="" alt="Avatar" class="w-8 h-8 rounded-full">
+                                <div id="onlineIndicator" class="online-indicator"></div>
+                            </div>
+                            <span id="username" class="text-sm font-medium text-gray-700"></span>
+                        </div>
+                    </div>
+                    <div id="authButtons">
+                        <a href="login.html" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                            <i class="fas fa-sign-in-alt mr-2"></i>Login
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="w-80 bg-white shadow-lg sidebar">
+            <!-- Search Bar -->
+            <div class="p-4 border-b border-gray-200">
+                <div class="relative">
+                    <input 
+                        type="text" 
+                        id="searchInput"
+                        placeholder="Search events..."
+                        class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                    <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                </div>
+            </div>
+
+            <!-- Category Filters -->
+            <div class="p-4 border-b border-gray-200">
+                <h3 class="text-sm font-semibold text-gray-700 mb-3">Categories</h3>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="filterByCategory('all')" class="category-filter active flex items-center space-x-2 p-2 rounded-lg bg-blue-100 text-blue-700 text-sm">
+                        <span>🎯</span>
+                        <span>All</span>
+                    </button>
+                    <button onclick="filterByCategory('sports')" class="category-filter flex items-center space-x-2 p-2 rounded-lg bg-gray-100 text-gray-700 text-sm hover:bg-gray-200">
+                        <span>🏃</span>
+                        <span>Sports</span>
+                    </button>
+                    <button onclick="filterByCategory('study')" class="category-filter flex items-center space-x-2 p-2 rounded-lg bg-gray-100 text-gray-700 text-sm hover:bg-gray-200">
+                        <span>📚</span>
+                        <span>Study</span>
+                    </button>
+                    <button onclick="filterByCategory('social')" class="category-filter flex items-center space-x-2 p-2 rounded-lg bg-gray-100 text-gray-700 text-sm hover:bg-gray-200">
+                        <span>🎉</span>
+                        <span>Social</span>
+                    </button>
+                    <button onclick="filterByCategory('food')" class="category-filter flex items-center space-x-2 p-2 rounded-lg bg-gray-100 text-gray-700 text-sm hover:bg-gray-200">
+                        <span>🍕</span>
+                        <span>Food</span>
+                    </button>
+                    <button onclick="filterByCategory('travel')" class="category-filter flex items-center space-x-2 p-2 rounded-lg bg-gray-100 text-gray-700 text-sm hover:bg-gray-200">
+                        <span>✈️</span>
+                        <span>Travel</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="p-4 border-b border-gray-200">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-blue-600" id="totalEvents">0</div>
+                        <div class="text-xs text-gray-500">Total Events</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-green-600" id="activeEvents">0</div>
+                        <div class="text-xs text-gray-500">Active Now</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Events List -->
+            <div class="p-4">
+                <h3 class="text-sm font-semibold text-gray-700 mb-3">Nearby Events</h3>
+                <div id="eventsList" class="space-y-3">
+                    <!-- Events will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Map Container -->
+        <div class="flex-1 relative">
+            <div id="map" class="map-container"></div>
+            
+            <!-- Map Controls -->
+            <div class="absolute top-4 right-4 space-y-2">
+                <button onclick="locateUser()" class="bg-white p-3 rounded-lg shadow-lg hover:bg-gray-50 transition-colors">
+                    <i class="fas fa-crosshairs text-blue-600"></i>
+                </button>
+                <button onclick="refreshMap()" class="bg-white p-3 rounded-lg shadow-lg hover:bg-gray-50 transition-colors">
+                    <i class="fas fa-sync-alt text-green-600"></i>
+                </button>
+            </div>
+
+            <!-- Create Event Floating Button -->
+            <button onclick="showCreateEventModal()" class="absolute bottom-6 right-6 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-all transform hover:scale-110">
+                <i class="fas fa-plus text-xl"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Create Event Modal -->
+    <div id="createEventModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4 transform transition-all">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold">Create New Event</h3>
+                <button onclick="hideCreateEventModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form id="createEventForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Event Title</label>
+                    <input type="text" id="eventTitle" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea id="eventDescription" rows="3" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                        <select id="eventCategory" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="">Select category</option>
+                            <option value="sports">Sports & Fitness</option>
+                            <option value="study">Study & Learning</option>
+                            <option value="social">Social & Entertainment</option>
+                            <option value="food">Food & Dining</option>
+                            <option value="travel">Travel & Adventure</option>
+                            <option value="music">Music & Arts</option>
+                            <option value="art">Arts & Culture</option>
+                            <option value="tech">Technology</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Max Participants</label>
+                        <input type="number" id="maxParticipants" min="2" max="100" value="10" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Date & Time</label>
+                    <input type="datetime-local" id="eventDatetime" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                    <input type="text" id="eventLocation" placeholder="Enter address or click on map" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                
+                <div class="flex space-x-3 pt-4">
+                    <button type="button" onclick="hideCreateEventModal()" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                        Create Event
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="main.js"></script>
+    
+    <script>
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+            setupEventListeners();
+            updateUI();
+        });
+
+        function initializeApp() {
+            // Initialize map
+            app.initializeMap('map');
+            
+            // Load and display events
+            displayEvents();
+            updateStats();
+            
+            // Check user authentication
+            if (app.currentUser) {
+                showUserStatus();
+            }
+        }
+
+        function setupEventListeners() {
+            // Search functionality
+            document.getElementById('searchInput').addEventListener('input', function(e) {
+                const query = e.target.value.toLowerCase();
+                filterEvents(query);
+            });
+
+            // Create event form
+            document.getElementById('createEventForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                createEvent();
+            });
+
+            // Map click to set event location
+            app.map.on('click', function(e) {
+                if (document.getElementById('createEventModal').classList.contains('hidden')) return;
+                
+                const lat = e.latlng.lat;
+                const lng = e.latlng.lng;
+                
+                // Reverse geocoding would go here in a real app
+                document.getElementById('eventLocation').value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+                
+                // Store coordinates for event creation
+                window.selectedLocation = [lat, lng];
+            });
+        }
+
+        function displayEvents(events = null) {
+            const eventsList = document.getElementById('eventsList');
+            const eventsToShow = events || app.events;
+            
+            eventsList.innerHTML = '';
+            
+            if (eventsToShow.length === 0) {
+                eventsList.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <i class="fas fa-calendar-times text-4xl mb-2"></i>
+                        <p>No events found</p>
+                    </div>
+                `;
+                return;
+            }
+
+            eventsToShow.forEach(event => {
+                const creator = app.users.find(u => u.id === event.creatorId);
+                const isJoined = app.currentUser && event.participants.includes(app.currentUser.id);
+                const isFull = event.participants.length >= event.maxParticipants;
+                
+                const categoryIcons = {
+                    sports: '🏃',
+                    study: '📚',
+                    social: '🎉',
+                    food: '🍕',
+                    travel: '✈️',
+                    music: '🎵',
+                    art: '🎨',
+                    tech: '💻'
+                };
+
+                const eventCard = document.createElement('div');
+                eventCard.className = 'event-card bg-white border border-gray-200 rounded-lg p-3 cursor-pointer hover:shadow-md transition-all';
+                eventCard.innerHTML = `
+                    <div class="flex items-start space-x-3">
+                        <div class="category-icon bg-blue-100 text-blue-600">
+                            ${categoryIcons[event.category] || '📍'}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-semibold text-gray-900 text-sm truncate">${event.title}</h4>
+                            <p class="text-xs text-gray-600 mt-1 line-clamp-2">${event.description}</p>
+                            <div class="flex items-center justify-between mt-2">
+                                <div class="flex items-center space-x-2 text-xs text-gray-500">
+                                    <span>📅 ${app.formatDate(event.datetime)}</span>
+                                </div>
+                                <div class="flex items-center space-x-1 text-xs text-gray-500">
+                                    <span>👥 ${event.participants.length}/${event.maxParticipants}</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between mt-2">
+                                <span class="text-xs text-gray-500">by ${creator ? creator.username : 'Unknown'}</span>
+                                <span class="px-2 py-1 text-xs rounded-full ${isJoined ? 'bg-green-100 text-green-800' : isFull ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}">
+                                    ${isJoined ? 'Joined' : isFull ? 'Full' : 'Available'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                eventCard.addEventListener('click', () => {
+                    // Center map on event location
+                    app.map.setView(event.location, 15);
+                });
+                
+                eventsList.appendChild(eventCard);
+            });
+        }
+
+        function updateStats() {
+            document.getElementById('totalEvents').textContent = app.events.length;
+            document.getElementById('activeEvents').textContent = app.events.filter(e => e.status === 'active').length;
+        }
+
+        function filterEvents(query = '') {
+            let filteredEvents = app.events;
+            
+            if (query) {
+                filteredEvents = app.searchEvents(query);
+            }
+            
+            displayEvents(filteredEvents);
+        }
+
+        function filterByCategory(category) {
+            // Update active filter button
+            document.querySelectorAll('.category-filter').forEach(btn => {
+                btn.classList.remove('active', 'bg-blue-100', 'text-blue-700');
+                btn.classList.add('bg-gray-100', 'text-gray-700');
+            });
+            
+            event.target.classList.add('active', 'bg-blue-100', 'text-blue-700');
+            event.target.classList.remove('bg-gray-100', 'text-gray-700');
+            
+            let filteredEvents = category === 'all' ? app.events : app.getEventsByCategory(category);
+            displayEvents(filteredEvents);
+        }
+
+        function showCreateEventModal() {
+            if (!app.currentUser) {
+                alert('Please login to create events');
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            document.getElementById('createEventModal').classList.remove('hidden');
+            
+            // Set minimum datetime to now
+            const now = new Date();
+            now.setMinutes(now.getMinutes() + 1);
+            document.getElementById('eventDatetime').value = now.toISOString().slice(0, 16);
+        }
+
+        function hideCreateEventModal() {
+            document.getElementById('createEventModal').classList.add('hidden');
+            document.getElementById('createEventForm').reset();
+            delete window.selectedLocation;
+        }
+
+        function createEvent() {
+            const title = document.getElementById('eventTitle').value;
+            const description = document.getElementById('eventDescription').value;
+            const category = document.getElementById('eventCategory').value;
+            const maxParticipants = parseInt(document.getElementById('maxParticipants').value);
+            const datetime = document.getElementById('eventDatetime').value;
+            const locationInput = document.getElementById('eventLocation').value;
+            
+            let location;
+            if (window.selectedLocation) {
+                location = window.selectedLocation;
+            } else {
+                // Use default location if no map click
+                location = app.currentUser ? app.currentUser.location : [52.2297, 21.0122];
+            }
+            
+            const result = app.createEvent(title, description, category, location, locationInput, datetime, maxParticipants);
+            
+            if (result.success) {
+                hideCreateEventModal();
+                displayEvents();
+                updateStats();
+                
+                // Show success message
+                showNotification('Event created successfully!', 'success');
+            } else {
+                showNotification(result.message || 'Failed to create event', 'error');
+            }
+        }
+
+        function locateUser() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    
+                    app.map.setView([lat, lng], 15);
+                    
+                    // Add user location marker
+                    L.marker([lat, lng])
+                        .addTo(app.map)
+                        .bindPopup('Your location')
+                        .openPopup();
+                        
+                }, function() {
+                    showNotification('Unable to get your location', 'error');
+                });
+            } else {
+                showNotification('Geolocation is not supported', 'error');
+            }
+        }
+
+        function refreshMap() {
+            app.clearMarkers();
+            app.events.forEach(event => app.addEventMarker(event));
+            showNotification('Map refreshed', 'success');
+        }
+
+        function showUserStatus() {
+            document.getElementById('userStatus').classList.remove('hidden');
+            document.getElementById('authButtons').classList.add('hidden');
+            
+            document.getElementById('username').textContent = app.currentUser.username;
+            document.getElementById('userAvatar').src = app.currentUser.avatar;
+            
+            if (!app.currentUser.online) {
+                document.getElementById('onlineIndicator').classList.add('offline-indicator');
+            }
+        }
+
+        function updateUI() {
+            // Add fade-in animation to main content
+            anime({
+                targets: '.event-card',
+                opacity: [0, 1],
+                translateY: [20, 0],
+                delay: anime.stagger(100),
+                duration: 600,
+                easing: 'easeOutQuart'
+            });
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-24 right-4 z-50 p-4 rounded-lg shadow-lg transform transition-all duration-300 ${
+                type === 'success' ? 'bg-green-500 text-white' : 
+                type === 'error' ? 'bg-red-500 text-white' : 
+                'bg-blue-500 text-white'
+            }`;
+            notification.innerHTML = `
+                <div class="flex items-center space-x-2">
+                    <i class="fas ${type === 'success' ? 'fa-check' : type === 'error' ? 'fa-exclamation' : 'fa-info'}"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Animate in
+            setTimeout(() => {
+                notification.style.transform = 'translateX(0)';
+            }, 100);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+
+        // Global functions for onclick handlers
+        window.filterByCategory = filterByCategory;
+        window.showCreateEventModal = showCreateEventModal;
+        window.hideCreateEventModal = hideCreateEventModal;
+        window.locateUser = locateUser;
+        window.refreshMap = refreshMap;
+    </script>
+</body>
+</html>
