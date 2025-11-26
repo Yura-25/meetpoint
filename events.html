@@ -68,6 +68,10 @@
                 <button onclick="filterCategory('tech')" class="category-filter px-4 py-2 rounded-full text-sm bg-gray-100">Tech</button>
                 <button onclick="filterCategory('food')" class="category-filter px-4 py-2 rounded-full text-sm bg-gray-100">Food</button>
                 <button onclick="filterCategory('social')" class="category-filter px-4 py-2 rounded-full text-sm bg-gray-100">Social</button>
+                <button onclick="filterCategory('study')" class="category-filter px-4 py-2 rounded-full text-sm bg-gray-100">Study</button>
+                <button onclick="filterCategory('travel')" class="category-filter px-4 py-2 rounded-full text-sm bg-gray-100">Travel</button>
+                <button onclick="filterCategory('music')" class="category-filter px-4 py-2 rounded-full text-sm bg-gray-100">Music</button>
+                <button onclick="filterCategory('art')" class="category-filter px-4 py-2 rounded-full text-sm bg-gray-100">Art</button>
             </div>
         </div>
 
@@ -75,7 +79,7 @@
         <div id="emptyState" class="hidden text-center py-12 text-gray-500">No events found.</div>
     </div>
 
-    <div id="createEventModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+    <div id="createEventModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[9999] flex items-center justify-center p-4">
         <div class="bg-white rounded-lg p-6 w-full max-w-md">
             <h3 class="text-xl font-bold mb-4">New Event</h3>
             <form id="createEventForm" class="space-y-3">
@@ -87,6 +91,10 @@
                         <option value="sports">Sports</option>
                         <option value="food">Food</option>
                         <option value="tech">Tech</option>
+                        <option value="study">Study</option>
+                        <option value="travel">Travel</option>
+                        <option value="music">Music</option>
+                        <option value="art">Art</option>
                     </select>
                     <input type="number" id="maxParticipants" value="10" class="border p-2 rounded">
                 </div>
@@ -120,15 +128,12 @@
                 renderEvents();
             });
 
-            // Form Submit Listener
             document.getElementById('createEventForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
-                // CALL THE NAMED FUNCTION
                 await createEvent(); 
             });
         });
 
-        // HERE IS THE FUNCTION YOU WERE LOOKING FOR
         async function createEvent() {
             const title = document.getElementById('eventTitle').value;
             const desc = document.getElementById('eventDescription').value;
@@ -137,14 +142,12 @@
             const max = document.getElementById('maxParticipants').value;
             const addr = document.getElementById('eventLocation').value;
             
-            // Show loading state
             const btn = document.querySelector('#createEventForm button[type="submit"]');
             const originalText = btn.innerText;
             btn.innerText = "Locating...";
             btn.disabled = true;
 
-            // 1. Try to find coordinates for the address
-            let loc = [51.7592, 19.4560]; // Default to center if failed
+            let loc = [51.7592, 19.4560]; 
             
             if (app.getCoordinates && addr) {
                 const foundCoords = await app.getCoordinates(addr);
@@ -153,7 +156,6 @@
                 }
             }
 
-            // 2. Create Event
             btn.innerText = "Creating...";
             const res = await app.createEvent(title, desc, cat, loc, addr, date, max);
             
@@ -163,7 +165,7 @@
             if(res.success) {
                 hideCreateEventModal();
                 renderEvents();
-                alert("Event created!");
+                // No alert here as requested
             } else {
                 alert(res.message || "Error creating event");
             }
@@ -191,7 +193,7 @@
                 const creatorName = e.creator ? e.creator.username : 'Unknown';
                 const isJoined = app.currentUser && e.participants.includes(app.currentUser.id);
                 const isFull = e.participants.length >= e.maxParticipants;
-                const icon = {sports:'🏃', food:'🍕', tech:'💻', social:'🎉'}[e.category] || '📍';
+                const icon = {sports:'🏃', food:'🍕', tech:'💻', social:'🎉', study:'📚', travel:'✈️', music:'🎵', art:'🎨'}[e.category] || '📍';
                 const statusText = isFull ? 'Full' : 'Active';
                 const statusClass = isFull ? 'status-full' : 'status-active';
                 
@@ -206,7 +208,7 @@
                     <div class="p-5">
                         <div class="flex justify-between items-start mb-2">
                             <h3 class="font-bold text-lg">${e.title}</h3>
-                            <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">${e.category}</span>
+                            <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full uppercase">${e.category}</span>
                         </div>
                         <p class="text-sm text-gray-600 mb-3 line-clamp-2">${e.description}</p>
                         <div class="text-sm text-gray-500 space-y-1 mb-4">
@@ -237,11 +239,8 @@
                 b.classList.remove('active', 'text-white', 'bg-blue-600');
                 b.classList.add('bg-gray-100', 'text-gray-700');
             });
-            // Re-highlight clicked
-            if(event && event.target) {
-                event.target.classList.add('active', 'text-white', 'bg-blue-600');
-                event.target.classList.remove('bg-gray-100', 'text-gray-700');
-            }
+            event.target.classList.add('active', 'text-white', 'bg-blue-600');
+            event.target.classList.remove('bg-gray-100', 'text-gray-700');
             renderEvents();
         }
 

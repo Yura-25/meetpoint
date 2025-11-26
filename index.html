@@ -491,46 +491,59 @@
         }
 
         async function createEvent() {
+            // 1. Get values using YOUR ORIGINAL IDs
             const title = document.getElementById('eventTitle').value;
-            const desc = document.getElementById('eventDescription').value;
-            const cat = document.getElementById('eventCategory').value;
-            const max = document.getElementById('maxParticipants').value;
+            const description = document.getElementById('eventDescription').value;
+            const category = document.getElementById('eventCategory').value;
+            const maxParticipants = document.getElementById('maxParticipants').value;
             const datetime = document.getElementById('eventDatetime').value;
-            const locationInput = document.getElementById('eventLocation').value; // The text user typed
+            const locationInput = document.getElementById('eventLocation').value;
             
+            // 2. Show Loading State (Visual Feedback)
+            const btn = document.querySelector('#createEventForm button[type="submit"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+            btn.disabled = true;
+
             let location;
 
-            // 1. Check if user clicked the map
+            // 3. Logic: Map Click vs. Typed Address
             if (window.selectedLocation) {
+                // User clicked the map
                 location = window.selectedLocation;
-            } 
-            // 2. If not, try to find coordinates from the text they typed
-            else if (locationInput) {
-                // Show a small "Searching..." indicator on the button if you want, or just wait
-                const btn = document.querySelector('#createEventForm button[type="submit"]');
-                const oldText = btn.innerText;
-                btn.innerText = "Finding Location...";
+            } else if (locationInput && app.getCoordinates) {
+                // User typed an address - Let's find it!
+                btn.innerHTML = '<i class="fas fa-search mr-2"></i>Locating...';
+                const coords = await app.getCoordinates(locationInput);
                 
-                location = await app.getCoordinates(locationInput); // <--- NEW CALL
-                
-                btn.innerText = oldText;
-                
-                if (!location) {
-                    alert("Could not find that location on the map. Please try a different address or click on the map.");
-                    return;
+                if (coords) {
+                    location = coords;
+                } else {
+                    showNotification("Could not find address. Try clicking the map.", "error");
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    return; // Stop here
                 }
-            } 
-            // 3. Fallback (should rarely happen if input is required)
-            else {
-                location = [51.7592, 19.4560]; // Center of Łódź
+            } else {
+                // Fallback (Center of Łódź)
+                location = [51.7592, 19.4560];
             }
             
-            // 4. Send to Backend
-            const result = await app.createEvent(title, desc, cat, location, locationInput, datetime, max);
+            // 4. Send to Backend (Async)
+            const result = await app.createEvent(title, description, category, location, locationInput, datetime, maxParticipants);
             
+            // 5. Handle Result
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+
             if (result.success) {
                 hideCreateEventModal();
-                updateStats(); // Refresh stats
+                
+                // Refresh the UI
+                if (typeof displayEvents === 'function') displayEvents(); 
+                if (typeof updateStats === 'function') updateStats();
+                
+                // Show your original toast notification
                 showNotification('Event created successfully!', 'success');
             } else {
                 showNotification(result.message || 'Failed to create event', 'error');
