@@ -1,4 +1,3 @@
-// MeetPoint - API Connected Logic (Sprint 2 + Events Page)
 class MeetPoint {
     constructor() {
         this.API_URL = 'http://localhost:3000/api';
@@ -44,12 +43,11 @@ class MeetPoint {
         window.location.href = 'login.html';
     }
 
-    // --- DATA FETCHING ---
+    // --- DATA ---
     async fetchEvents() {
         try {
             const res = await fetch(`${this.API_URL}/events`);
             this.events = await res.json();
-            // If on map page, update markers
             if (this.map) this.updateMapMarkers();
             return this.events;
         } catch (err) {
@@ -58,7 +56,7 @@ class MeetPoint {
         }
     }
 
-    // --- MAP FUNCTIONS ---
+    // --- MAP ---
     async initializeMap(containerId) {
         const LODZ_COORDS = [51.7592, 19.4560];
         this.map = L.map(containerId).setView(LODZ_COORDS, 13);
@@ -85,70 +83,13 @@ class MeetPoint {
 
     addEventMarker(event) {
         if (!this.map) return;
-
-        // 1. Setup Icons & Data
-        const categoryIcons = {
-            sports: '🏃', study: '📚', social: '🎉', food: '🍕',
-            travel: '✈️', music: '🎵', art: '🎨', tech: '💻'
-        };
+        const categoryIcons = { sports: '🏃', food: '🍕', tech: '💻', social: '🎉', study: '📚' };
         const icon = categoryIcons[event.category] || '📍';
-        
-        const creatorName = event.creator ? event.creator.username : 'Unknown';
-        const isJoined = this.currentUser && event.participants.includes(this.currentUser.id);
-        const isFull = event.participants.length >= event.maxParticipants;
-        
-        // 2. Create Marker
         const marker = L.marker([event.latitude, event.longitude]).addTo(this.map);
-
-        // 3. Bind Rich Popup (The "Card" UI)
-        marker.bindPopup(`
-            <div class="p-1 min-w-[220px]">
-                <div class="flex justify-between items-start mb-2">
-                    <h3 class="font-bold text-lg text-gray-900 leading-tight">${event.title}</h3>
-                    <span class="text-xl ml-2">${icon}</span>
-                </div>
-
-                <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
-                    ${event.category}
-                </span>
-
-                <p class="text-sm text-gray-600 mt-2 mb-3 line-clamp-2">${event.description}</p>
-
-                <div class="space-y-1 text-xs text-gray-500 mb-3">
-                    <div class="flex items-center">
-                        <i class="fas fa-map-marker-alt w-4 text-center mr-1"></i>
-                        <span class="truncate max-w-[180px]">${event.address}</span>
-                    </div>
-                    <div class="flex items-center">
-                        <i class="fas fa-calendar-alt w-4 text-center mr-1"></i>
-                        ${new Date(event.datetime).toLocaleDateString()} ${new Date(event.datetime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                    </div>
-                    <div class="flex items-center">
-                        <i class="fas fa-users w-4 text-center mr-1"></i>
-                        ${event.participants.length}/${event.maxParticipants} joined
-                    </div>
-                    <div class="flex items-center">
-                        <i class="fas fa-user w-4 text-center mr-1"></i>
-                        By ${creatorName}
-                    </div>
-                </div>
-
-                <button 
-                    onclick="app.joinEvent('${event.id}')" 
-                    class="w-full py-1.5 rounded text-sm font-medium transition-colors ${
-                        isJoined 
-                        ? 'bg-green-100 text-green-700 hover:bg-green-200' 
-                        : isFull 
-                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                            : 'bg-blue-600 text-white hover:bg-blue-700'
-                    }"
-                    ${isFull && !isJoined ? 'disabled' : ''}
-                >
-                    ${isJoined ? 'Joined ✓' : isFull ? 'Full' : 'Join Event'}
-                </button>
-            </div>
-        `);
-
+        
+        // Simple Popup
+        marker.bindPopup(`<b>${icon} ${event.title}</b><br>${event.address}<br><button onclick="app.joinEvent('${event.id}')" class="mt-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">View/Join</button>`);
+        
         this.markers.push({ id: event.id, marker });
     }
 
@@ -193,19 +134,35 @@ class MeetPoint {
         } catch (e) { return { success: false, message: 'Network error' }; }
     }
 
-    // --- HELPERS ---
-    getCategoryName(cat) {
-        const names = { 
-            sports: 'Sports & Fitness', study: 'Study & Learning', 
-            social: 'Social & Entertainment', food: 'Food & Dining', 
-            tech: 'Technology', travel: 'Travel', music: 'Music', art: 'Art'
-        };
-        return names[cat] || cat;
+    // --- ROBUST GEOCODING (THE FIX) ---
+    async getCoordinates(address) {
+        console.log("Searching for:", address);
+        try {
+            // Create a timeout promise that rejects after 3 seconds
+            const timeout = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error("Timeout")), 3000)
+            );
+
+            const search = fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
+
+            // Race the search against the timeout
+            const res = await Promise.race([search, timeout]);
+            const data = await res.json();
+
+            if (data && data.length > 0) {
+                console.log("Found:", data[0]);
+                return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+            }
+        } catch (err) {
+            console.warn("Geocoding failed or timed out (using default location):", err);
+        }
+        // Return null if anything fails, so the app doesn't hang
+        return null;
     }
 
-    formatDate(dateStr) {
-        return new Date(dateStr).toLocaleString();
-    }
+    // Helpers
+    getCategoryName(cat) { return cat.toUpperCase(); }
+    formatDate(d) { return new Date(d).toLocaleDateString(); }
 }
 
 const app = new MeetPoint();
