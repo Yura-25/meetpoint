@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Events - MeetPoint</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .event-card {
+            transition: all 0.3s ease;
+            transform: translateY(0);
+        }
+        
+        .event-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.8s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .category-filter.active {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+        }
+        
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status-active { background: #dcfce7; color: #166534; }
+        .status-full { background: #fee2e2; color: #991b1b; }
+        .status-completed { background: #f3f4f6; color: #374151; }
+        
+        .participant-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid white;
+            margin-left: -8px;
+        }
+        
+        .participant-avatar:first-child {
+            margin-left: 0;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <nav class="bg-white shadow-lg border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-map-marker-alt text-white text-lg"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-900">MeetPoint</h1>
+                        <p class="text-xs text-gray-500">Discover events nearby</p>
+                    </div>
+                </div>
+
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="index.html" class="text-gray-700 hover:text-blue-600 transition-colors">
+                        <i class="fas fa-map mr-2"></i>Map
+                    </a>
+                    <a href="events.html" class="text-blue-600 font-medium border-b-2 border-blue-600 pb-1">
+                        <i class="fas fa-calendar-alt mr-2"></i>Events
+                    </a>
+                    </div>
+
+                <div class="flex items-center space-x-4">
+                    <div id="userStatus" class="hidden">
+                        <div class="flex items-center space-x-2">
+                            <div class="relative">
+                                <img id="userAvatar" src="resources/avatars/default.jpg" alt="Avatar" class="w-8 h-8 rounded-full">
+                                <div id="onlineIndicator" class="w-2 h-2 bg-green-500 rounded-full absolute top-0 right-0 border-2 border-white"></div>
+                            </div>
+                            <span id="username" class="text-sm font-medium text-gray-700"></span>
+                            <button onclick="app.logout()" class="text-xs text-red-500 hover:underline ml-2">Logout</button>
+                        </div>
+                    </div>
+                    <div id="authButtons">
+                        <a href="login.html" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                            <i class="fas fa-sign-in-alt mr-2"></i>Login
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="text-center mb-8 fade-in">
+            <h2 class="text-3xl font-bold text-gray-900 mb-2">Discover Amazing Events</h2>
+            <p class="text-gray-600 max-w-2xl mx-auto">
+                Find and join events that match your interests. From sports and fitness to study groups and social gatherings.
+            </p>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8 fade-in">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+                <div class="flex-1 lg:mr-6">
+                    <div class="relative">
+                        <input 
+                            type="text" 
+                            id="searchInput"
+                            placeholder="Search events by title, description, or category..."
+                            class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                        <i class="fas fa-search absolute left-3 top-4 text-gray-400"></i>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-4">
+                    <select id="sortSelect" class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                        <option value="participants">Most Popular</option>
+                        <option value="date">Date & Time</option>
+                    </select>
+                    
+                    <button onclick="showCreateEventModal()" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap">
+                        <i class="fas fa-plus mr-2"></i>Create Event
+                    </button>
+                </div>
+            </div>
+
+            <div class="mt-6">
+                <h3 class="text-sm font-semibold text-gray-700 mb-3">Filter by Category</h3>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="filterByCategory('all')" class="category-filter active px-4 py-2 rounded-full text-sm font-medium transition-all">
+                        <span>🎯</span> All Categories
+                    </button>
+                    <button onclick="filterByCategory('sports')" class="category-filter px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all">
+                        <span>🏃</span> Sports & Fitness
+                    </button>
+                    <button onclick="filterByCategory('study')" class="category-filter px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all">
+                        <span>📚</span> Study & Learning
+                    </button>
+                    <button onclick="filterByCategory('social')" class="category-filter px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all">
+                        <span>🎉</span> Social & Entertainment
+                    </button>
+                    <button onclick="filterByCategory('food')" class="category-filter px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all">
+                        <span>🍕</span> Food & Dining
+                    </button>
+                    <button onclick="filterByCategory('travel')" class="category-filter px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all">
+                        <span>✈️</span> Travel & Adventure
+                    </button>
+                    <button onclick="filterByCategory('music')" class="category-filter px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all">
+                        <span>🎵</span> Music & Arts
+                    </button>
+                    <button onclick="filterByCategory('tech')" class="category-filter px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all">
+                        <span>💻</span> Technology
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="eventsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 fade-in">
+            </div>
+
+        <div id="emptyState" class="hidden text-center py-12">
+            <i class="fas fa-calendar-times text-6xl text-gray-300 mb-4"></i>
+            <h3 class="text-xl font-semibold text-gray-600 mb-2">No events found</h3>
+            <p class="text-gray-500 mb-6">Try adjusting your search or filters to find more events.</p>
+            <button onclick="clearFilters()" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                Clear Filters
+            </button>
+        </div>
+    </div>
+
+    <div id="createEventModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 transform transition-all max-h-screen overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-semibold">Create New Event</h3>
+                <button onclick="hideCreateEventModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <form id="createEventForm" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Event Title *</label>
+                        <input type="text" id="eventTitle" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+                        <select id="eventCategory" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="">Select category</option>
+                            <option value="sports">Sports & Fitness</option>
+                            <option value="study">Study & Learning</option>
+                            <option value="social">Social & Entertainment</option>
+                            <option value="food">Food & Dining</option>
+                            <option value="travel">Travel & Adventure</option>
+                            <option value="music">Music & Arts</option>
+                            <option value="art">Arts & Culture</option>
+                            <option value="tech">Technology</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Description *</label>
+                    <textarea id="eventDescription" rows="4" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Describe your event, what to expect, any requirements..."></textarea>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date & Time *</label>
+                        <input type="datetime-local" id="eventDatetime" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Max Participants *</label>
+                        <input type="number" id="maxParticipants" min="2" max="100" value="10" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Location/Address *</label>
+                    <input type="text" id="eventLocation" placeholder="Enter full address or landmark" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">City</label>
+                        <input type="text" id="eventCity" placeholder="e.g., Warsaw" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Event Website/Social (Optional)</label>
+                        <input type="url" id="eventWebsite" placeholder="https://..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                </div>
+                
+                <div class="flex space-x-3 pt-6">
+                    <button type="button" onclick="hideCreateEventModal()" class="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" class="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                        Create Event
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+    
+    <script>
+        let currentFilter = 'all';
+        let currentSort = 'newest';
+        let searchQuery = '';
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            // 1. Check Auth
+            checkAuth();
+            
+            // 2. Fetch Data from API (This is the key change!)
+            await app.fetchEvents();
+            
+            // 3. Render
+            updateUI();
+            displayEvents();
+            setupEventListeners();
