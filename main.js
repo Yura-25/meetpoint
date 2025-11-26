@@ -85,11 +85,70 @@ class MeetPoint {
 
     addEventMarker(event) {
         if (!this.map) return;
-        const icons = { sports: '🏃', food: '🍕', tech: '💻', social: '🎉', study: '📚' };
-        const icon = icons[event.category] || '📍';
-        const marker = L.marker([event.latitude, event.longitude])
-            .addTo(this.map)
-            .bindPopup(`<b>${icon} ${event.title}</b><br>${event.description}`);
+
+        // 1. Setup Icons & Data
+        const categoryIcons = {
+            sports: '🏃', study: '📚', social: '🎉', food: '🍕',
+            travel: '✈️', music: '🎵', art: '🎨', tech: '💻'
+        };
+        const icon = categoryIcons[event.category] || '📍';
+        
+        const creatorName = event.creator ? event.creator.username : 'Unknown';
+        const isJoined = this.currentUser && event.participants.includes(this.currentUser.id);
+        const isFull = event.participants.length >= event.maxParticipants;
+        
+        // 2. Create Marker
+        const marker = L.marker([event.latitude, event.longitude]).addTo(this.map);
+
+        // 3. Bind Rich Popup (The "Card" UI)
+        marker.bindPopup(`
+            <div class="p-1 min-w-[220px]">
+                <div class="flex justify-between items-start mb-2">
+                    <h3 class="font-bold text-lg text-gray-900 leading-tight">${event.title}</h3>
+                    <span class="text-xl ml-2">${icon}</span>
+                </div>
+
+                <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
+                    ${event.category}
+                </span>
+
+                <p class="text-sm text-gray-600 mt-2 mb-3 line-clamp-2">${event.description}</p>
+
+                <div class="space-y-1 text-xs text-gray-500 mb-3">
+                    <div class="flex items-center">
+                        <i class="fas fa-map-marker-alt w-4 text-center mr-1"></i>
+                        <span class="truncate max-w-[180px]">${event.address}</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="fas fa-calendar-alt w-4 text-center mr-1"></i>
+                        ${new Date(event.datetime).toLocaleDateString()} ${new Date(event.datetime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                    </div>
+                    <div class="flex items-center">
+                        <i class="fas fa-users w-4 text-center mr-1"></i>
+                        ${event.participants.length}/${event.maxParticipants} joined
+                    </div>
+                    <div class="flex items-center">
+                        <i class="fas fa-user w-4 text-center mr-1"></i>
+                        By ${creatorName}
+                    </div>
+                </div>
+
+                <button 
+                    onclick="app.joinEvent('${event.id}')" 
+                    class="w-full py-1.5 rounded text-sm font-medium transition-colors ${
+                        isJoined 
+                        ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                        : isFull 
+                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                            : 'bg-blue-600 text-white hover:bg-blue-700'
+                    }"
+                    ${isFull && !isJoined ? 'disabled' : ''}
+                >
+                    ${isJoined ? 'Joined ✓' : isFull ? 'Full' : 'Join Event'}
+                </button>
+            </div>
+        `);
+
         this.markers.push({ id: event.id, marker });
     }
 

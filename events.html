@@ -4,70 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Events - MeetPoint</title>
-    
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
-    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        
-        * {
-            font-family: 'Inter', sans-serif;
-        }
-        
-        .gradient-bg {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-        
-        .event-card {
-            transition: all 0.3s ease;
-            transform: translateY(0);
-        }
-        
-        .event-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-        }
-        
-        .fade-in {
-            animation: fadeIn 0.8s ease-out;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .category-filter.active {
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-            color: white;
-        }
-        
-        .status-badge {
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-        
+        * { font-family: 'Inter', sans-serif; }
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .event-card { transition: all 0.3s ease; transform: translateY(0); }
+        .event-card:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1); }
+        .fade-in { animation: fadeIn 0.8s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .category-filter.active { background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white; }
+        .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; }
         .status-active { background: #dcfce7; color: #166534; }
         .status-full { background: #fee2e2; color: #991b1b; }
-        .status-completed { background: #f3f4f6; color: #374151; }
-        
-        .participant-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            border: 2px solid white;
-            margin-left: -8px;
-        }
-        
-        .participant-avatar:first-child {
-            margin-left: 0;
-        }
+        .participant-avatar { width: 32px; height: 32px; border-radius: 50%; border: 2px solid white; margin-left: -8px; }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -83,31 +35,21 @@
                         <p class="text-xs text-gray-500">Discover events nearby</p>
                     </div>
                 </div>
-
                 <div class="hidden md:flex items-center space-x-8">
-                    <a href="index.html" class="text-gray-700 hover:text-blue-600 transition-colors">
-                        <i class="fas fa-map mr-2"></i>Map
-                    </a>
-                    <a href="events.html" class="text-blue-600 font-medium border-b-2 border-blue-600 pb-1">
-                        <i class="fas fa-calendar-alt mr-2"></i>Events
-                    </a>
-                    </div>
-
+                    <a href="index.html" class="text-gray-700 hover:text-blue-600 transition-colors"><i class="fas fa-map mr-2"></i>Map</a>
+                    <a href="events.html" class="text-blue-600 font-medium border-b-2 border-blue-600 pb-1"><i class="fas fa-calendar-alt mr-2"></i>Events</a>
+                </div>
                 <div class="flex items-center space-x-4">
-                    <div id="userStatus" class="hidden">
-                        <div class="flex items-center space-x-2">
-                            <div class="relative">
-                                <img id="userAvatar" src="resources/avatars/default.jpg" alt="Avatar" class="w-8 h-8 rounded-full">
-                                <div id="onlineIndicator" class="w-2 h-2 bg-green-500 rounded-full absolute top-0 right-0 border-2 border-white"></div>
-                            </div>
-                            <span id="username" class="text-sm font-medium text-gray-700"></span>
-                            <button onclick="app.logout()" class="text-xs text-red-500 hover:underline ml-2">Logout</button>
+                    <div id="userStatus" class="hidden flex items-center space-x-2">
+                        <div class="relative">
+                            <img id="userAvatar" src="resources/avatars/default.jpg" alt="Avatar" class="w-8 h-8 rounded-full">
+                            <div class="w-2 h-2 bg-green-500 rounded-full absolute top-0 right-0 border-2 border-white"></div>
                         </div>
+                        <span id="username" class="text-sm font-medium text-gray-700"></span>
+                        <button onclick="app.logout()" class="text-xs text-red-500 ml-2">Logout</button>
                     </div>
                     <div id="authButtons">
-                        <a href="login.html" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                            <i class="fas fa-sign-in-alt mr-2"></i>Login
-                        </a>
+                        <a href="login.html" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"><i class="fas fa-sign-in-alt mr-2"></i>Login</a>
                     </div>
                 </div>
             </div>
@@ -117,176 +59,219 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div class="text-center mb-8 fade-in">
             <h2 class="text-3xl font-bold text-gray-900 mb-2">Discover Amazing Events</h2>
-            <p class="text-gray-600 max-w-2xl mx-auto">
-                Find and join events that match your interests. From sports and fitness to study groups and social gatherings.
-            </p>
+            <p class="text-gray-600 max-w-2xl mx-auto">Find and join events in Łódź.</p>
         </div>
 
         <div class="bg-white rounded-lg shadow-md p-6 mb-8 fade-in">
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-                <div class="flex-1 lg:mr-6">
-                    <div class="relative">
-                        <input 
-                            type="text" 
-                            id="searchInput"
-                            placeholder="Search events by title, description, or category..."
-                            class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        >
-                        <i class="fas fa-search absolute left-3 top-4 text-gray-400"></i>
-                    </div>
+                <div class="flex-1 lg:mr-6 relative">
+                    <input type="text" id="searchInput" placeholder="Search events..." class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <i class="fas fa-search absolute left-3 top-4 text-gray-400"></i>
                 </div>
-
                 <div class="flex items-center space-x-4">
-                    <select id="sortSelect" class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <select id="sortSelect" class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                         <option value="newest">Newest First</option>
-                        <option value="oldest">Oldest First</option>
                         <option value="participants">Most Popular</option>
-                        <option value="date">Date & Time</option>
                     </select>
-                    
-                    <button onclick="showCreateEventModal()" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap">
-                        <i class="fas fa-plus mr-2"></i>Create Event
-                    </button>
+                    <button onclick="showCreateEventModal()" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 whitespace-nowrap"><i class="fas fa-plus mr-2"></i>Create Event</button>
                 </div>
             </div>
-
             <div class="mt-6">
                 <h3 class="text-sm font-semibold text-gray-700 mb-3">Filter by Category</h3>
-                <div class="flex flex-wrap gap-2">
-                    <button onclick="filterByCategory('all')" class="category-filter active px-4 py-2 rounded-full text-sm font-medium transition-all">
-                        <span>🎯</span> All Categories
-                    </button>
-                    <button onclick="filterByCategory('sports')" class="category-filter px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all">
-                        <span>🏃</span> Sports & Fitness
-                    </button>
-                    <button onclick="filterByCategory('study')" class="category-filter px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all">
-                        <span>📚</span> Study & Learning
-                    </button>
-                    <button onclick="filterByCategory('social')" class="category-filter px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all">
-                        <span>🎉</span> Social & Entertainment
-                    </button>
-                    <button onclick="filterByCategory('food')" class="category-filter px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all">
-                        <span>🍕</span> Food & Dining
-                    </button>
-                    <button onclick="filterByCategory('travel')" class="category-filter px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all">
-                        <span>✈️</span> Travel & Adventure
-                    </button>
-                    <button onclick="filterByCategory('music')" class="category-filter px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all">
-                        <span>🎵</span> Music & Arts
-                    </button>
-                    <button onclick="filterByCategory('tech')" class="category-filter px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all">
-                        <span>💻</span> Technology
-                    </button>
+                <div class="flex flex-wrap gap-2" id="categoryButtons">
+                    <button onclick="filterByCategory('all')" class="category-filter active px-4 py-2 rounded-full text-sm font-medium transition-all">All</button>
+                    <button onclick="filterByCategory('sports')" class="category-filter px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">Sports</button>
+                    <button onclick="filterByCategory('social')" class="category-filter px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">Social</button>
+                    <button onclick="filterByCategory('food')" class="category-filter px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">Food</button>
+                    <button onclick="filterByCategory('tech')" class="category-filter px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">Tech</button>
                 </div>
             </div>
         </div>
 
-        <div id="eventsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 fade-in">
-            </div>
-
-        <div id="emptyState" class="hidden text-center py-12">
-            <i class="fas fa-calendar-times text-6xl text-gray-300 mb-4"></i>
-            <h3 class="text-xl font-semibold text-gray-600 mb-2">No events found</h3>
-            <p class="text-gray-500 mb-6">Try adjusting your search or filters to find more events.</p>
-            <button onclick="clearFilters()" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
-                Clear Filters
-            </button>
-        </div>
+        <div id="eventsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 fade-in"></div>
+        <div id="emptyState" class="hidden text-center py-12 text-gray-500">No events found</div>
     </div>
 
     <div id="createEventModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 transform transition-all max-h-screen overflow-y-auto">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xl font-semibold">Create New Event</h3>
-                <button onclick="hideCreateEventModal()" class="text-gray-500 hover:text-gray-700">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
-            </div>
-            
+        <div class="bg-white rounded-lg p-6 w-full max-w-2xl mx-4">
+            <h3 class="text-xl font-semibold mb-4">Create New Event</h3>
             <form id="createEventForm" class="space-y-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Event Title *</label>
-                        <input type="text" id="eventTitle" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Category *</label>
-                        <select id="eventCategory" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            <option value="">Select category</option>
-                            <option value="sports">Sports & Fitness</option>
-                            <option value="study">Study & Learning</option>
-                            <option value="social">Social & Entertainment</option>
-                            <option value="food">Food & Dining</option>
-                            <option value="travel">Travel & Adventure</option>
-                            <option value="music">Music & Arts</option>
-                            <option value="art">Arts & Culture</option>
-                            <option value="tech">Technology</option>
-                        </select>
-                    </div>
+                <input type="text" id="eventTitle" required placeholder="Title" class="w-full px-3 py-2 border rounded-lg">
+                <textarea id="eventDescription" required placeholder="Description" class="w-full px-3 py-2 border rounded-lg"></textarea>
+                <div class="grid grid-cols-2 gap-4">
+                    <select id="eventCategory" class="w-full px-3 py-2 border rounded-lg">
+                        <option value="social">Social</option>
+                        <option value="sports">Sports</option>
+                        <option value="food">Food</option>
+                        <option value="tech">Tech</option>
+                    </select>
+                    <input type="number" id="maxParticipants" value="10" class="w-full px-3 py-2 border rounded-lg">
                 </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Description *</label>
-                    <textarea id="eventDescription" rows="4" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Describe your event, what to expect, any requirements..."></textarea>
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Date & Time *</label>
-                        <input type="datetime-local" id="eventDatetime" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Max Participants *</label>
-                        <input type="number" id="maxParticipants" min="2" max="100" value="10" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Location/Address *</label>
-                    <input type="text" id="eventLocation" placeholder="Enter full address or landmark" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">City</label>
-                        <input type="text" id="eventCity" placeholder="e.g., Warsaw" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Event Website/Social (Optional)</label>
-                        <input type="url" id="eventWebsite" placeholder="https://..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-                </div>
-                
-                <div class="flex space-x-3 pt-6">
-                    <button type="button" onclick="hideCreateEventModal()" class="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
-                        Cancel
-                    </button>
-                    <button type="submit" class="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                        Create Event
-                    </button>
+                <input type="datetime-local" id="eventDatetime" required class="w-full px-3 py-2 border rounded-lg">
+                <input type="text" id="eventLocation" required placeholder="Address (e.g. Manufaktura)" class="w-full px-3 py-2 border rounded-lg">
+                <div class="flex gap-3 pt-4">
+                    <button type="button" onclick="hideCreateEventModal()" class="flex-1 border py-2 rounded-lg">Cancel</button>
+                    <button type="submit" class="flex-1 bg-blue-600 text-white py-2 rounded-lg">Create</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script src="main.js"></script>
-    
     <script>
+        // --- CONNECTING UI TO REAL BACKEND ---
         let currentFilter = 'all';
-        let currentSort = 'newest';
         let searchQuery = '';
 
-        document.addEventListener('DOMContentLoaded', async function() {
-            // 1. Check Auth
+        document.addEventListener('DOMContentLoaded', async () => {
             checkAuth();
+            // IMPORTANT: Fetch real data from database
+            await app.fetchEvents(); 
+            renderEvents();
             
-            // 2. Fetch Data from API (This is the key change!)
-            await app.fetchEvents();
+            // Setup Listeners
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                searchQuery = e.target.value.toLowerCase();
+                renderEvents();
+            });
             
-            // 3. Render
-            updateUI();
-            displayEvents();
-            setupEventListeners();
+            document.getElementById('createEventForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await handleCreate();
+            });
+        });
+
+        function checkAuth() {
+            if (app.currentUser) {
+                document.getElementById('userStatus').classList.remove('hidden');
+                document.getElementById('authButtons').classList.add('hidden');
+                document.getElementById('username').textContent = app.currentUser.name;
+            }
+        }
+
+        function renderEvents() {
+            const container = document.getElementById('eventsContainer');
+            const emptyState = document.getElementById('emptyState');
+            
+            // Filter Logic
+            const filtered = app.events.filter(e => {
+                const matchCat = currentFilter === 'all' || e.category === currentFilter;
+                const matchSearch = e.title.toLowerCase().includes(searchQuery);
+                return matchCat && matchSearch;
+            });
+
+            if (filtered.length === 0) {
+                container.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            container.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+            
+            container.innerHTML = filtered.map((event, index) => {
+                // DATA MAPPING: Use real DB fields
+                const creatorName = event.creator ? event.creator.username : 'Unknown';
+                const isJoined = app.currentUser && event.participants.includes(app.currentUser.id);
+                const isFull = event.participants.length >= event.maxParticipants;
+                
+                const icons = { sports: '🏃', food: '🍕', tech: '💻', social: '🎉' };
+                const icon = icons[event.category] || '📍';
+                const statusClass = isFull ? 'status-full' : 'status-active';
+                const statusText = isFull ? 'Full' : 'Active';
+
+                return `
+                <div class="event-card bg-white rounded-lg shadow-md overflow-hidden fade-in" style="animation-delay: ${index * 0.1}s">
+                    <div class="relative h-48 bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
+                        <div class="text-white text-center">
+                            <div class="text-6xl mb-2">${icon}</div>
+                            <div class="text-sm opacity-90">${event.category}</div>
+                        </div>
+                        <div class="absolute top-4 right-4">
+                            <span class="status-badge ${statusClass}">${statusText}</span>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-2">${event.title}</h3>
+                        <p class="text-gray-600 text-sm mb-4 line-clamp-3">${event.description}</p>
+                        <div class="space-y-2 mb-4 text-sm text-gray-500">
+                            <div class="flex items-center"><i class="fas fa-calendar-alt mr-2"></i>${app.formatDate(event.datetime)}</div>
+                            <div class="flex items-center"><i class="fas fa-map-marker-alt mr-2"></i>${event.address}</div>
+                            <div class="flex items-center"><i class="fas fa-users mr-2"></i>${event.participants.length}/${event.maxParticipants}</div>
+                            <div class="flex items-center"><i class="fas fa-user mr-2"></i>By ${creatorName}</div>
+                        </div>
+                        <button onclick="handleJoin('${event.id}')" 
+                            class="w-full py-2 rounded-lg font-medium transition ${isJoined ? 'bg-green-100 text-green-700' : 'bg-blue-600 text-white hover:bg-blue-700'}">
+                            ${isJoined ? 'Joined ✓' : isFull ? 'Full' : 'Join Event'}
+                        </button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // ACTIONS
+        async function handleJoin(id) {
+            if (!app.currentUser) return alert("Please login first");
+            const btn = event.target;
+            btn.innerText = 'Processing...';
+            
+            const res = await app.joinEvent(id);
+            if (res.success) {
+                renderEvents(); // Refresh UI
+            } else {
+                alert(res.message);
+                btn.innerText = 'Join Event';
+            }
+        }
+
+        async function handleCreate() {
+            if (!app.currentUser) return alert("Login required");
+            
+            const title = document.getElementById('eventTitle').value;
+            const desc = document.getElementById('eventDescription').value;
+            const cat = document.getElementById('eventCategory').value;
+            const date = document.getElementById('eventDatetime').value;
+            const max = document.getElementById('maxParticipants').value;
+            const addr = document.getElementById('eventLocation').value;
+            
+            // Default coordinates for list-created events (Center of Łódź)
+            const loc = [51.7592, 19.4560];
+
+            const res = await app.createEvent(title, desc, cat, loc, addr, date, max);
+            
+            if (res.success) {
+                hideCreateEventModal();
+                renderEvents();
+                // Optional: Show toast notification here
+            } else {
+                alert(res.message);
+            }
+        }
+
+        // UI HELPERS
+        function filterByCategory(cat) {
+            currentFilter = cat;
+            document.querySelectorAll('.category-filter').forEach(b => {
+                b.classList.remove('active', 'bg-blue-600', 'text-white');
+                b.classList.add('bg-gray-100', 'text-gray-700');
+            });
+            event.target.classList.add('active', 'bg-blue-600', 'text-white');
+            event.target.classList.remove('bg-gray-100', 'text-gray-700');
+            renderEvents();
+        }
+
+        function showCreateEventModal() {
+            if (!app.currentUser) return alert("Please login");
+            document.getElementById('createEventModal').classList.remove('hidden');
+        }
+        function hideCreateEventModal() {
+            document.getElementById('createEventModal').classList.add('hidden');
+        }
+        function clearFilters() {
+            currentFilter = 'all';
+            document.getElementById('searchInput').value = '';
+            renderEvents();
+        }
+    </script>
+</body>
+</html>
