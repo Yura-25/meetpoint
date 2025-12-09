@@ -1,4 +1,4 @@
-// MeetPoint - Final Sprint 2 Logic
+// MeetPoint - Sprint 2 Enhanced with Custom Markers & Full CRUD
 class MeetPoint {
     constructor() {
         this.API_URL = 'http://localhost:3000/api';
@@ -39,13 +39,11 @@ class MeetPoint {
         }
     }
 
-    // [THIS WAS MISSING]
     async register(username, email, password) {
         try {
             const res = await fetch(`${this.API_URL}/auth/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                // Note: Backend expects 'name', not 'username'
                 body: JSON.stringify({ name: username, email, password }) 
             });
 
@@ -70,36 +68,39 @@ class MeetPoint {
 
     // --- DATA & MAP ---
 
-// main.js
+    async fetchEvents() {
+        try {
+            const res = await fetch(`${this.API_URL}/events`);
+            this.events = await res.json();
+            
+            if (this.map) this.updateMapMarkers();
+            
+            if (window.displayEvents) window.displayEvents(this.events);
+            if (window.updateStats) window.updateStats(); 
 
-async fetchEvents() {
-    try {
-        const res = await fetch(`${this.API_URL}/events`);
-        this.events = await res.json();
-        
-        if (this.map) this.updateMapMarkers();
-        
-        // Helper for index.html sidebar
-        if (window.displayEvents) window.displayEvents(this.events);
-
-        // [NEW] Update stats immediately after fetching data
-        if (window.updateStats) window.updateStats(); 
-
-        return this.events;
-    } catch (err) {
-        console.error('Error fetching events:', err);
-        return [];
+            return this.events;
+        } catch (err) {
+            console.error('Error fetching events:', err);
+            return [];
+        }
     }
-}
 
     async initializeMap(containerId) {
         const LODZ_COORDS = [51.7592, 19.4560];
         this.map = L.map(containerId).setView(LODZ_COORDS, 13);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(this.map);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
+            attribution: '© OpenStreetMap' 
+        }).addTo(this.map);
 
         await this.fetchEvents();
         
-        // Map Click -> Prepare Event Creation
+        // Check if we need to center on specific event (from events.html)
+        const urlParams = new URLSearchParams(window.location.search);
+        const eventId = urlParams.get('eventId');
+        if (eventId) {
+            this.centerOnEvent(eventId);
+        }
+        
         this.map.on('click', (e) => {
             const locInput = document.getElementById('eventLocation');
             if (locInput) {
@@ -112,17 +113,23 @@ async fetchEvents() {
                     .setLatLng(e.latlng)
                     .setContent("📍 Location Selected")
                     .openOn(this.map);
-                
-                // Update visual marker in index.html if function exists
-                if (typeof updateLocationSelection === 'function') {
-                    updateLocationSelection(e.latlng.lat, e.latlng.lng, "Selected from Map");
-                }
-                
-                // Open modal if function exists
-                if (typeof openModal === 'function') openModal();
             }
         });
         return this.map;
+    }
+
+    // NEW: Center map on specific event
+    centerOnEvent(eventId) {
+        const event = this.events.find(e => e.id === eventId);
+        if (event) {
+            this.map.setView([event.latitude, event.longitude], 16);
+            
+            // Find and open the popup for this event
+            const markerObj = this.markers.find(m => m.id === eventId);
+            if (markerObj) {
+                markerObj.marker.openPopup();
+            }
+        }
     }
 
     updateMapMarkers() {
@@ -131,23 +138,83 @@ async fetchEvents() {
         this.events.forEach(event => this.addEventMarker(event));
     }
 
-    // main.js
+    // UPDATED: Custom marker creation
+    createCustomMarkerIcon(category) {
+        const iconConfig = {
+            sports: { color: '#10b981', shape: 'pin', icon: '🏃' },
+            study: { color: '#3b82f6', shape: 'pin', icon: '📚' },
+            social: { color: '#f59e0b', shape: 'pin', icon: '🎉' },
+            food: { color: '#ef4444', shape: 'circle', icon: '🍕' },
+            travel: { color: '#06b6d4', shape: 'pin', icon: '✈️' },
+            music: { color: '#8b5cf6', shape: 'note', icon: '♪' },
+            art: { color: '#ec4899', shape: 'pin', icon: '🎨' },
+            tech: { color: '#6366f1', shape: 'pin', icon: '💻' },
+            none: { color: '#6b7280', shape: 'pin', icon: '📍' }
+        };
+
+        const config = iconConfig[category] || iconConfig.none;
+        
+        // Create custom HTML marker
+        let markerHTML;
+        
+        if (config.shape === 'note') {
+            // Special music note shape
+            markerHTML = `
+                <div class="marker-music-note marker-pulse">
+                    <div style="color: white; font-size: 20px; font-weight: bold; 
+                                position: absolute; top: 50%; left: 50%; 
+                                transform: translate(-50%, -50%);">♪</div>
+                </div>
+            `;
+        } else if (config.shape === 'circle') {
+            // Circle for food
+            markerHTML = `
+                <div style="width: 40px; height: 40px; background: ${config.color}; 
+                            border-radius: 50%; border: 3px solid white; 
+                            box-shadow: 0 3px 8px rgba(0,0,0,0.3); display: flex; 
+                            align-items: center; justify-content: center; font-size: 20px;"
+                     class="marker-pulse">
+                    ${config.icon}
+                </div>
+            `;
+        } else {
+            // Standard pin shape
+            markerHTML = `
+                <div class="custom-marker marker-pulse" 
+                     style="background: linear-gradient(135deg, ${config.color}, ${this.darkenColor(config.color)});">
+                    <div class="custom-marker-icon">${config.icon}</div>
+                </div>
+            `;
+        }
+
+        return L.divIcon({
+            html: markerHTML,
+            className: 'custom-marker-container',
+            iconSize: [40, 40],
+            iconAnchor: [20, 40],
+            popupAnchor: [0, -40]
+        });
+    }
+
+    darkenColor(color) {
+        // Simple color darkening for gradient
+        const hex = color.replace('#', '');
+        const num = parseInt(hex, 16);
+        const r = Math.max(0, (num >> 16) - 30);
+        const g = Math.max(0, ((num >> 8) & 0x00FF) - 30);
+        const b = Math.max(0, (num & 0x0000FF) - 30);
+        return `#${(r << 16 | g << 8 | b).toString(16).padStart(6, '0')}`;
+    }
 
     addEventMarker(event) {
         if (!this.map) return;
 
-        const categoryIcons = {
-            sports: '🏃', study: '📚', social: '🎉', food: '🍕',
-            travel: '✈️', music: '🎵', art: '🎨', tech: '💻'
-        };
-        const icon = categoryIcons[event.category] || '📍';
         const creatorName = event.creator ? event.creator.username : 'Unknown';
-        
         const isJoined = this.currentUser && event.participants && event.participants.includes(this.currentUser.id);
         const isFull = event.participants ? event.participants.length >= event.maxParticipants : false;
         const participantCount = event.participants ? event.participants.length : 0;
+        const isCreator = this.currentUser && event.creator && event.creator.id === this.currentUser.id;
         
-        // Determine button class based on state
         let btnClass = 'mp-popup-btn ';
         let btnText = '';
         
@@ -162,17 +229,33 @@ async fetchEvents() {
             btnText = 'Join Event';
         }
 
-        const marker = L.marker([event.latitude, event.longitude]).addTo(this.map);
+        // Use custom marker
+        const customIcon = this.createCustomMarkerIcon(event.category);
+        const marker = L.marker([event.latitude, event.longitude], { icon: customIcon }).addTo(this.map);
 
-        // CLEAN HTML: No inline styles, just referring to classes in index.html
+        // Add delete and edit buttons for creator
+        const creatorButtons = isCreator ? `
+            <div style="display: flex; gap: 8px; margin-top: 8px;">
+                <button onclick="app.showEditEventModal('${event.id}')" 
+                        class="mp-popup-btn" 
+                        style="background: #f59e0b; color: white; flex: 1;">
+                    <i class="fas fa-edit"></i> Edit
+                </button>
+                <button onclick="app.deleteEvent('${event.id}')" 
+                        class="mp-popup-btn" 
+                        style="background: #ef4444; color: white; flex: 1;">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+            </div>
+        ` : '';
+
         marker.bindPopup(`
             <div class="mp-popup-card">
                 <div class="mp-popup-header">
                     <h3 class="mp-popup-title">${event.title}</h3>
-                    <span class="mp-popup-icon">${icon}</span>
                 </div>
                 
-                <span class="mp-popup-category">${event.category}</span>
+                <span class="mp-popup-category">${event.category || 'No Category'}</span>
                 <p class="mp-popup-desc">${event.description}</p>
                 
                 <div class="mp-popup-meta">
@@ -201,12 +284,15 @@ async fetchEvents() {
                 >
                     ${btnText}
                 </button>
+                
+                ${creatorButtons}
             </div>
         `);
 
         this.markers.push({ id: event.id, marker });
     }
-    // --- ACTIONS ---
+
+    // --- CRUD ACTIONS ---
 
     async createEvent(title, description, category, location, address, datetime, maxParticipants) {
         if (!this.currentUser) return { success: false, message: 'Login required' };
@@ -218,9 +304,12 @@ async fetchEvents() {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 },
                 body: JSON.stringify({
-                    title, description, category, datetime,
+                    title, description, 
+                    category: category || 'none', // Default to 'none' if empty
+                    datetime,
                     maxParticipants: parseInt(maxParticipants),
-                    latitude: location[0], longitude: location[1],
+                    latitude: location[0], 
+                    longitude: location[1],
                     address: address || "Map Location"
                 })
             });
@@ -230,7 +319,61 @@ async fetchEvents() {
             }
             const err = await res.json();
             return { success: false, message: err.error };
-        } catch (e) { return { success: false, message: 'Network error' }; }
+        } catch (e) { 
+            return { success: false, message: 'Network error' }; 
+        }
+    }
+
+    // NEW: Edit event
+    async editEvent(eventId, updates) {
+        if (!this.currentUser) return { success: false, message: 'Login required' };
+        try {
+            const res = await fetch(`${this.API_URL}/events/${eventId}`, {
+                method: 'PUT',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify(updates)
+            });
+            if (res.ok) {
+                await this.fetchEvents();
+                return { success: true };
+            }
+            const err = await res.json();
+            return { success: false, message: err.error || 'Update failed' };
+        } catch (e) { 
+            return { success: false, message: 'Network error' }; 
+        }
+    }
+
+    // NEW: Delete event
+    async deleteEvent(eventId) {
+        if (!this.currentUser) return { success: false, message: 'Login required' };
+        
+        if (!confirm('Are you sure you want to delete this event? This cannot be undone.')) {
+            return { success: false, message: 'Cancelled' };
+        }
+
+        try {
+            const res = await fetch(`${this.API_URL}/events/${eventId}`, {
+                method: 'DELETE',
+                headers: { 
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            if (res.ok) {
+                await this.fetchEvents();
+                if (window.showNotification) {
+                    window.showNotification('Event deleted successfully', 'success');
+                }
+                return { success: true };
+            }
+            const err = await res.json();
+            return { success: false, message: err.error || 'Delete failed' };
+        } catch (e) { 
+            return { success: false, message: 'Network error' }; 
+        }
     }
 
     async joinEvent(eventId) {
@@ -248,11 +391,45 @@ async fetchEvents() {
         } catch (e) { return { success: false, message: 'Network error' }; }
     }
 
+    // NEW: Show edit modal (can be called from anywhere)
+    showEditEventModal(eventId) {
+        const event = this.events.find(e => e.id === eventId);
+        if (!event) return;
+
+        // Store event ID for submission
+        window.editingEventId = eventId;
+
+        // Populate form with existing data
+        document.getElementById('eventTitle').value = event.title;
+        document.getElementById('eventDescription').value = event.description;
+        document.getElementById('eventCategory').value = event.category || 'none';
+        document.getElementById('maxParticipants').value = event.maxParticipants;
+        
+        // Format datetime for input
+        const dt = new Date(event.datetime);
+        const formatted = new Date(dt.getTime() - dt.getTimezoneOffset() * 60000)
+            .toISOString()
+            .slice(0, 16);
+        document.getElementById('eventDatetime').value = formatted;
+        
+        document.getElementById('eventLocation').value = event.address;
+        window.selectedLocation = [event.latitude, event.longitude];
+
+        // Change modal title and button
+        const modalTitle = document.querySelector('#createEventModal h3');
+        if (modalTitle) modalTitle.textContent = 'Edit Event';
+        
+        const submitBtn = document.querySelector('#createEventForm button[type="submit"]');
+        if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-save mr-2"></i>Update Event';
+
+        // Show modal
+        document.getElementById('createEventModal').classList.remove('hidden');
+    }
+
     // --- HELPERS ---
 
     async getCoordinates(address) {
         try {
-            // 3s timeout to prevent hanging
             const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 3000));
             const search = fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
             
@@ -268,7 +445,12 @@ async fetchEvents() {
         return null;
     }
 
-    getCategoryName(cat) { return cat ? cat.charAt(0).toUpperCase() + cat.slice(1) : ''; }
+    clearMarkers() {
+        this.markers.forEach(m => this.map.removeLayer(m.marker));
+        this.markers = [];
+    }
+
+    getCategoryName(cat) { return cat ? cat.charAt(0).toUpperCase() + cat.slice(1) : 'No Category'; }
     formatDate(d) { return new Date(d).toLocaleDateString(); }
 }
 

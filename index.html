@@ -106,6 +106,114 @@
             background: #ef4444;
         }
 
+
+        /* Custom Leaflet Marker Styles - Add to index.html <style> section */
+        
+        /* Base marker pin style */
+        .custom-marker {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg);
+            border: 3px solid white;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .custom-marker-icon {
+            transform: rotate(45deg);
+            font-size: 18px;
+        }
+        
+        /* Category Colors */
+        .marker-sports { background: linear-gradient(135deg, #10b981, #059669); }
+        .marker-study { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+        .marker-social { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .marker-food { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .marker-travel { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+        .marker-music { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+        .marker-art { background: linear-gradient(135deg, #ec4899, #db2777); }
+        .marker-tech { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+        .marker-none { background: linear-gradient(135deg, #6b7280, #4b5563); }
+        
+        /* Special shaped markers */
+        .marker-music-note {
+            width: 35px;
+            height: 45px;
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            border-radius: 50% 50% 0 0;
+            position: relative;
+            border: 3px solid white;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+        }
+        
+        .marker-music-note::before {
+            content: '♪';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
+        .marker-food-fork {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .marker-food-fork::before {
+            content: '🍽️';
+            font-size: 20px;
+        }
+        
+        .marker-star {
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-bottom: 30px solid #3b82f6;
+            position: relative;
+            border-radius: 3px;
+        }
+        
+        .marker-star::before {
+            content: '';
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-top: 30px solid #3b82f6;
+            position: absolute;
+            top: 10px;
+            left: -20px;
+            border-radius: 3px;
+        }
+
+        /* Pulse animation for active events */
+        .marker-pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        }
+   
+
         .mp-popup-card { min-width: 240px; padding: 4px; font-family: 'Inter', sans-serif; }
     .mp-popup-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
     .mp-popup-title { font-weight: 700; font-size: 1.125rem; color: #111827; margin: 0; line-height: 1.25; }
@@ -222,6 +330,10 @@
                         <span>✈️</span>
                         <span>Travel</span>
                     </button>
+                    <button onclick="filterByCategory('none')" class="category-filter flex items-center space-x-2 p-2 rounded-lg bg-gray-100 text-gray-700 text-sm hover:bg-gray-200">
+                        <span>🔘</span>
+                        <span>No Category</span>
+                    </button>
                 </div>
             </div>
 
@@ -295,14 +407,15 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
                         <select id="eventCategory" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                             <option value="">Select category</option>
-                            <option value="sports">Sports & Fitness</option>
-                            <option value="study">Study & Learning</option>
-                            <option value="social">Social & Entertainment</option>
-                            <option value="food">Food & Dining</option>
-                            <option value="travel">Travel & Adventure</option>
-                            <option value="music">Music & Arts</option>
-                            <option value="art">Arts & Culture</option>
-                            <option value="tech">Technology</option>
+                            <option value="none">🔘 No Category</option>
+                            <option value="sports">🏃 Sports & Fitness</option>
+                            <option value="study">📚 Study & Learning</option>
+                            <option value="social">🎉 Social & Entertainment</option>
+                            <option value="food">🍕 Food & Dining</option>
+                            <option value="travel">✈️ Travel & Adventure</option>
+                            <option value="music">🎵 Music & Arts</option>
+                            <option value="art">🎨 Arts & Culture</option>
+                            <option value="tech">💻 Technology</option>
                         </select>
                     </div>
                     
@@ -347,18 +460,20 @@
         });
 
         function initializeApp() {
-            // Initialize map
-            app.initializeMap('map');
-            
-            // Load and display events
-            displayEvents();
-            updateStats();
-            
-            // Check user authentication
-            if (app.currentUser) {
-                showUserStatus();
-            }
-        }
+    // 1. Force a check of the session immediately
+    app.loadUserSession(); 
+
+    // 2. NOW check if we are logged in
+    if (app.currentUser) {
+        showUserStatus();
+    }
+
+    // 3. Initialize map (keep this)
+    app.initializeMap('map');
+
+    // 4. Initial stats update
+    updateStats();
+}
 
         function setupEventListeners() {
             // Search functionality
@@ -486,86 +601,115 @@
             displayEvents(filteredEvents);
         }
 
-        function showCreateEventModal() {
-            if (!app.currentUser) {
-                alert('Please login to create events');
-                window.location.href = 'login.html';
-                return;
-            }
-            
-            document.getElementById('createEventModal').classList.remove('hidden');
-            
-            // Set minimum datetime to now
-            const now = new Date();
-            now.setMinutes(now.getMinutes() + 1);
-            document.getElementById('eventDatetime').value = now.toISOString().slice(0, 16);
-        }
+function showCreateEventModal() {
+    if (!app.currentUser) {
+        alert('Please login to create events');
+        window.location.href = 'login.html';
+        return;
+    }
+    
+    // Reset any editing state
+    delete window.editingEventId;
+    
+    // Reset modal title
+    const modalTitle = document.querySelector('#createEventModal h3');
+    if (modalTitle) modalTitle.textContent = 'Create New Event';
+    
+    const submitBtn = document.querySelector('#createEventForm button[type="submit"]');
+    if (submitBtn) submitBtn.innerHTML = 'Create Event';
+    
+    document.getElementById('createEventModal').classList.remove('hidden');
+    
+    const now = new Date();
+    now.setMinutes(now.getMinutes() + 1);
+    document.getElementById('eventDatetime').value = now.toISOString().slice(0, 16);
+}
 
         function hideCreateEventModal() {
-            document.getElementById('createEventModal').classList.add('hidden');
-            document.getElementById('createEventForm').reset();
-            delete window.selectedLocation;
-        }
+    document.getElementById('createEventModal').classList.add('hidden');
+    document.getElementById('createEventForm').reset();
+    delete window.selectedLocation;
+    delete window.editingEventId;
+    
+    // Reset modal title and button text
+    const modalTitle = document.querySelector('#createEventModal h3');
+    if (modalTitle) modalTitle.textContent = 'Create New Event';
+    
+    const submitBtn = document.querySelector('#createEventForm button[type="submit"]');
+    if (submitBtn) submitBtn.innerHTML = 'Create Event';
+}
 
         async function createEvent() {
-            // 1. Get values using YOUR ORIGINAL IDs
-            const title = document.getElementById('eventTitle').value;
-            const description = document.getElementById('eventDescription').value;
-            const category = document.getElementById('eventCategory').value;
-            const maxParticipants = document.getElementById('maxParticipants').value;
-            const datetime = document.getElementById('eventDatetime').value;
-            const locationInput = document.getElementById('eventLocation').value;
-            
-            // 2. Show Loading State (Visual Feedback)
-            const btn = document.querySelector('#createEventForm button[type="submit"]');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
-            btn.disabled = true;
+    const title = document.getElementById('eventTitle').value;
+    const description = document.getElementById('eventDescription').value;
+    const category = document.getElementById('eventCategory').value;
+    const maxParticipants = document.getElementById('maxParticipants').value;
+    const datetime = document.getElementById('eventDatetime').value;
+    const locationInput = document.getElementById('eventLocation').value;
+    
+    const btn = document.querySelector('#createEventForm button[type="submit"]');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+    btn.disabled = true;
 
-            let location;
+    let location;
 
-            // 3. Logic: Map Click vs. Typed Address
-            if (window.selectedLocation) {
-                // User clicked the map
-                location = window.selectedLocation;
-            } else if (locationInput && app.getCoordinates) {
-                // User typed an address - Let's find it!
-                btn.innerHTML = '<i class="fas fa-search mr-2"></i>Locating...';
-                const coords = await app.getCoordinates(locationInput);
-                
-                if (coords) {
-                    location = coords;
-                } else {
-                    showNotification("Could not find address. Try clicking the map.", "error");
-                    btn.innerHTML = originalText;
-                    btn.disabled = false;
-                    return; // Stop here
-                }
-            } else {
-                // Fallback (Center of Łódź)
-                location = [51.7592, 19.4560];
-            }
-            
-            // 4. Send to Backend (Async)
-            const result = await app.createEvent(title, description, category, location, locationInput, datetime, maxParticipants);
-            
-            // 5. Handle Result
+    if (window.selectedLocation) {
+        location = window.selectedLocation;
+    } else if (locationInput && app.getCoordinates) {
+        btn.innerHTML = '<i class="fas fa-search mr-2"></i>Locating...';
+        const coords = await app.getCoordinates(locationInput);
+        
+        if (coords) {
+            location = coords;
+        } else {
+            showNotification("Could not find address. Try clicking the map.", "error");
             btn.innerHTML = originalText;
             btn.disabled = false;
-
-            if (result.success) {
-                hideCreateEventModal();
-                
-                // Refresh the UI
-                if (typeof displayEvents === 'function') displayEvents(); 
-                if (typeof updateStats === 'function') updateStats();
-                
-                // Show your original toast notification
-                showNotification('Event created successfully!', 'success');
-            } else {
-                showNotification(result.message || 'Failed to create event', 'error');
-            }
+            return;
         }
+    } else {
+        location = [51.7592, 19.4560];
+    }
+    
+    let result;
+    
+    // Check if editing or creating
+    if (window.editingEventId) {
+        // EDIT MODE
+        result = await app.editEvent(window.editingEventId, {
+            title, description, category,
+            latitude: location[0],
+            longitude: location[1],
+            address: locationInput,
+            datetime,
+            maxParticipants
+        });
+    } else {
+        // CREATE MODE
+        result = await app.createEvent(title, description, category, location, locationInput, datetime, maxParticipants);
+    }
+    
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+
+    if (result.success) {
+        hideCreateEventModal();
+        
+        if (typeof displayEvents === 'function') displayEvents(); 
+        if (typeof updateStats === 'function') updateStats();
+        
+        showNotification(
+            window.editingEventId ? 'Event updated successfully!' : 'Event created successfully!', 
+            'success'
+        );
+        
+        // Reset editing state
+        delete window.editingEventId;
+    } else {
+        showNotification(result.message || 'Failed to save event', 'error');
+    }
+}
 
         function locateUser() {
             if (navigator.geolocation) {

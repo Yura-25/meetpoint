@@ -72,6 +72,8 @@
                 <button onclick="filterCategory('travel')" class="category-filter px-4 py-2 rounded-full text-sm bg-gray-100">Travel</button>
                 <button onclick="filterCategory('music')" class="category-filter px-4 py-2 rounded-full text-sm bg-gray-100">Music</button>
                 <button onclick="filterCategory('art')" class="category-filter px-4 py-2 rounded-full text-sm bg-gray-100">Art</button>
+                <button onclick="filterCategory('none')" class="category-filter px-4 py-2 rounded-full text-sm bg-gray-100">None</button>
+              
             </div>
         </div>
 
@@ -86,15 +88,17 @@
                 <input type="text" id="eventTitle" placeholder="Title" required class="w-full border p-2 rounded">
                 <textarea id="eventDescription" placeholder="Description" required class="w-full border p-2 rounded"></textarea>
                 <div class="grid grid-cols-2 gap-2">
-                    <select id="eventCategory" class="border p-2 rounded">
-                        <option value="social">Social</option>
-                        <option value="sports">Sports</option>
-                        <option value="food">Food</option>
-                        <option value="tech">Tech</option>
-                        <option value="study">Study</option>
-                        <option value="travel">Travel</option>
-                        <option value="music">Music</option>
-                        <option value="art">Art</option>
+                    <select id="eventCategory" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">Select category</option>
+                        <option value="none">🔘 No Category</option>
+                        <option value="sports">🏃 Sports & Fitness</option>
+                        <option value="study">📚 Study & Learning</option>
+                        <option value="social">🎉 Social & Entertainment</option>
+                        <option value="food">🍕 Food & Dining</option>
+                        <option value="travel">✈️ Travel & Adventure</option>
+                        <option value="music">🎵 Music & Arts</option>
+                        <option value="art">🎨 Arts & Culture</option>
+                        <option value="tech">💻 Technology</option>
                     </select>
                     <input type="number" id="maxParticipants" value="10" class="border p-2 rounded">
                 </div>
@@ -135,96 +139,193 @@
         });
 
         async function createEvent() {
-            const title = document.getElementById('eventTitle').value;
-            const desc = document.getElementById('eventDescription').value;
-            const cat = document.getElementById('eventCategory').value;
-            const date = document.getElementById('eventDatetime').value;
-            const max = document.getElementById('maxParticipants').value;
-            const addr = document.getElementById('eventLocation').value;
-            
-            const btn = document.querySelector('#createEventForm button[type="submit"]');
-            const originalText = btn.innerText;
-            btn.innerText = "Locating...";
-            btn.disabled = true;
+    const title = document.getElementById('eventTitle').value;
+    const desc = document.getElementById('eventDescription').value;
+    const cat = document.getElementById('eventCategory').value;
+    const date = document.getElementById('eventDatetime').value;
+    const max = document.getElementById('maxParticipants').value;
+    const addr = document.getElementById('eventLocation').value;
+    
+    const btn = document.querySelector('#createEventForm button[type="submit"]');
+    const originalText = btn.innerText;
+    btn.innerText = "Locating...";
+    btn.disabled = true;
 
-            let loc = [51.7592, 19.4560]; 
-            
-            if (app.getCoordinates && addr) {
-                const foundCoords = await app.getCoordinates(addr);
-                if (foundCoords) {
-                    loc = foundCoords;
-                }
-            }
-
-            btn.innerText = "Creating...";
-            const res = await app.createEvent(title, desc, cat, loc, addr, date, max);
-            
-            btn.innerText = originalText;
-            btn.disabled = false;
-
-            if(res.success) {
-                hideCreateEventModal();
-                renderEvents();
-                // No alert here as requested
-            } else {
-                alert(res.message || "Error creating event");
-            }
+    let loc = [51.7592, 19.4560]; 
+    
+    if (app.getCoordinates && addr) {
+        const foundCoords = await app.getCoordinates(addr);
+        if (foundCoords) {
+            loc = foundCoords;
         }
+    }
+
+    btn.innerText = window.editingEventId ? "Updating..." : "Creating...";
+    
+    let res;
+    if (window.editingEventId) {
+        // EDIT MODE
+        res = await app.editEvent(window.editingEventId, {
+            title: title,
+            description: desc,
+            category: cat,
+            latitude: loc[0],
+            longitude: loc[1],
+            address: addr,
+            datetime: date,
+            maxParticipants: max
+        });
+    } else {
+        // CREATE MODE
+        res = await app.createEvent(title, desc, cat, loc, addr, date, max);
+    }
+    
+    btn.innerText = originalText;
+    btn.disabled = false;
+
+    if(res.success) {
+        hideCreateEventModal();
+        renderEvents();
+    } else {
+        alert(res.message || "Error saving event");
+    }
+}
 
         function renderEvents() {
-            const container = document.getElementById('eventsContainer');
-            const empty = document.getElementById('emptyState');
-            
-            const filtered = app.events.filter(e => {
-                const matchCat = currentFilter === 'all' || e.category === currentFilter;
-                const matchSearch = e.title.toLowerCase().includes(searchQuery);
-                return matchCat && matchSearch;
-            });
+    const container = document.getElementById('eventsContainer');
+    const empty = document.getElementById('emptyState');
+    
+    const filtered = app.events.filter(e => {
+        const matchCat = currentFilter === 'all' || e.category === currentFilter;
+        const matchSearch = e.title.toLowerCase().includes(searchQuery);
+        return matchCat && matchSearch;
+    });
 
-            if(filtered.length === 0) {
-                container.classList.add('hidden');
-                empty.classList.remove('hidden');
-                return;
-            }
+    if(filtered.length === 0) {
+        container.classList.add('hidden');
+        empty.classList.remove('hidden');
+        return;
+    }
 
-            container.classList.remove('hidden');
-            empty.classList.add('hidden');
-            container.innerHTML = filtered.map((e, i) => {
-                const creatorName = e.creator ? e.creator.username : 'Unknown';
-                const isJoined = app.currentUser && e.participants.includes(app.currentUser.id);
-                const isFull = e.participants.length >= e.maxParticipants;
-                const icon = {sports:'🏃', food:'🍕', tech:'💻', social:'🎉', study:'📚', travel:'✈️', music:'🎵', art:'🎨'}[e.category] || '📍';
-                const statusText = isFull ? 'Full' : 'Active';
-                const statusClass = isFull ? 'status-full' : 'status-active';
+    container.classList.remove('hidden');
+    empty.classList.add('hidden');
+    container.innerHTML = filtered.map((e, i) => {
+        const creatorName = e.creator ? e.creator.username : 'Unknown';
+        const isJoined = app.currentUser && e.participants.includes(app.currentUser.id);
+        const isFull = e.participants.length >= e.maxParticipants;
+        const isCreator = app.currentUser && e.creator && e.creator.id === app.currentUser.id;
+        
+        const icon = {
+            sports:'🏃', food:'🍕', tech:'💻', social:'🎉', 
+            study:'📚', travel:'✈️', music:'🎵', art:'🎨', none:'📍'
+        }[e.category] || '📍';
+        
+        const statusText = isFull ? 'Full' : 'Active';
+        const statusClass = isFull ? 'status-full' : 'status-active';
+        
+        // Creator action buttons
+        const creatorButtons = isCreator ? `
+            <div class="flex gap-2 mt-3">
+                <button onclick="editEventFromList('${e.id}')" 
+                        class="flex-1 bg-yellow-100 text-yellow-700 py-2 px-3 rounded hover:bg-yellow-200 transition text-sm font-medium">
+                    <i class="fas fa-edit mr-1"></i>Edit
+                </button>
+                <button onclick="deleteEventFromList('${e.id}')" 
+                        class="flex-1 bg-red-100 text-red-700 py-2 px-3 rounded hover:bg-red-200 transition text-sm font-medium">
+                    <i class="fas fa-trash mr-1"></i>Delete
+                </button>
+            </div>
+        ` : '';
+        
+        return `
+        <div class="event-card bg-white rounded-lg shadow-md overflow-hidden fade-in" style="animation-delay: ${i*0.05}s">
+            <div class="h-32 bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-4xl relative">
+                ${icon}
+                <div class="absolute top-2 right-2">
+                    <span class="status-badge ${statusClass}">${statusText}</span>
+                </div>
+            </div>
+            <div class="p-5">
+                <div class="flex justify-between items-start mb-2">
+                    <h3 class="font-bold text-lg">${e.title}</h3>
+                    <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full uppercase">${e.category || 'none'}</span>
+                </div>
+                <p class="text-sm text-gray-600 mb-3 line-clamp-2">${e.description}</p>
+                <div class="text-sm text-gray-500 space-y-1 mb-4">
+                    <div><i class="fas fa-clock mr-2"></i>${app.formatDate(e.datetime)}</div>
+                    <div><i class="fas fa-map-marker-alt mr-2"></i>${e.address}</div>
+                    <div><i class="fas fa-user mr-2"></i>By ${creatorName}</div>
+                    <div><i class="fas fa-users mr-2"></i>${e.participants.length}/${e.maxParticipants} joined</div>
+                </div>
                 
-                return `
-                <div class="event-card bg-white rounded-lg shadow-md overflow-hidden fade-in" style="animation-delay: ${i*0.05}s">
-                    <div class="h-32 bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-4xl relative">
-                        ${icon}
-                        <div class="absolute top-2 right-2">
-                            <span class="status-badge ${statusClass}">${statusText}</span>
-                        </div>
-                    </div>
-                    <div class="p-5">
-                        <div class="flex justify-between items-start mb-2">
-                            <h3 class="font-bold text-lg">${e.title}</h3>
-                            <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full uppercase">${e.category}</span>
-                        </div>
-                        <p class="text-sm text-gray-600 mb-3 line-clamp-2">${e.description}</p>
-                        <div class="text-sm text-gray-500 space-y-1 mb-4">
-                            <div><i class="fas fa-clock mr-2"></i>${app.formatDate(e.datetime)}</div>
-                            <div><i class="fas fa-map-marker-alt mr-2"></i>${e.address}</div>
-                            <div><i class="fas fa-user mr-2"></i>By ${creatorName}</div>
-                            <div><i class="fas fa-users mr-2"></i>${e.participants.length}/${e.maxParticipants} joined</div>
-                        </div>
-                        <button onclick="handleJoin('${e.id}')" 
-                            class="w-full py-2 rounded font-medium transition ${isJoined ? 'bg-green-100 text-green-700' : 'bg-blue-600 text-white hover:bg-blue-700'}">
-                            ${isJoined ? 'Joined ✓' : 'Join Event'}
-                        </button>
-                    </div>
-                </div>`;
-            }).join('');
-        }
+                ${creatorButtons}
+                
+                <div class="flex gap-2 ${creatorButtons ? 'mt-2' : ''}">
+                    <button onclick="viewOnMap('${e.id}')" 
+                        class="flex-1 bg-gray-100 text-gray-700 py-2 px-3 rounded hover:bg-gray-200 transition text-sm font-medium">
+                        <i class="fas fa-map mr-1"></i>View on Map
+                    </button>
+                    <button onclick="handleJoin('${e.id}')" 
+                        class="flex-1 py-2 px-3 rounded font-medium transition text-sm ${
+                            isJoined 
+                                ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                                : isFull 
+                                    ? 'bg-gray-100 text-gray-500 cursor-not-allowed' 
+                                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                        }"
+                        ${isFull && !isJoined ? 'disabled' : ''}>
+                        ${isJoined ? 'Joined ✓' : isFull ? 'Full' : 'Join Event'}
+                    </button>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// NEW: Navigate to map and center on event
+function viewOnMap(eventId) {
+    // Open index.html with event ID parameter
+    window.location.href = `index.html?eventId=${eventId}`;
+}
+
+// NEW: Edit event from events list
+async function editEventFromList(eventId) {
+    const event = app.events.find(e => e.id === eventId);
+    if (!event) return;
+
+    // Populate form
+    document.getElementById('eventTitle').value = event.title;
+    document.getElementById('eventDescription').value = event.description;
+    document.getElementById('eventCategory').value = event.category || 'none';
+    document.getElementById('maxParticipants').value = event.maxParticipants;
+    
+    const dt = new Date(event.datetime);
+    const formatted = new Date(dt.getTime() - dt.getTimezoneOffset() * 60000)
+        .toISOString()
+        .slice(0, 16);
+    document.getElementById('eventDatetime').value = formatted;
+    
+    document.getElementById('eventLocation').value = event.address;
+    window.selectedLocation = [event.latitude, event.longitude];
+    window.editingEventId = eventId;
+
+    // Update modal UI
+    const modalTitle = document.querySelector('#createEventModal h3');
+    if (modalTitle) modalTitle.textContent = 'Edit Event';
+    
+    const submitBtn = document.querySelector('#createEventForm button[type="submit"]');
+    if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-save mr-2"></i>Update Event';
+
+    showCreateEventModal();
+}
+
+// NEW: Delete event from events list
+async function deleteEventFromList(eventId) {
+    const result = await app.deleteEvent(eventId);
+    if (result.success) {
+        renderEvents();
+    }
+}
 
         async function handleJoin(id) {
             if(!app.currentUser) return alert("Please login first");
@@ -245,12 +346,36 @@
         }
 
         function showCreateEventModal() {
-            if(!app.currentUser) return alert("Login required");
-            document.getElementById('createEventModal').classList.remove('hidden');
-        }
+    if(!app.currentUser) return alert("Login required");
+    
+    // Only reset if not editing
+    if (!window.editingEventId) {
+        const modalTitle = document.querySelector('#createEventModal h3');
+        if (modalTitle) modalTitle.textContent = 'New Event';
+        
+        const submitBtn = document.querySelector('#createEventForm button[type="submit"]');
+        if (submitBtn) submitBtn.innerHTML = 'Create';
+    }
+    
+    document.getElementById('createEventModal').classList.remove('hidden');
+}
         function hideCreateEventModal() {
-            document.getElementById('createEventModal').classList.add('hidden');
-        }
+    document.getElementById('createEventModal').classList.add('hidden');
+    document.getElementById('createEventForm').reset();
+    delete window.editingEventId;
+    delete window.selectedLocation;
+    
+    // Reset modal title and button
+    const modalTitle = document.querySelector('#createEventModal h3');
+    if (modalTitle) modalTitle.textContent = 'New Event';
+    
+    const submitBtn = document.querySelector('#createEventForm button[type="submit"]');
+    if (submitBtn) submitBtn.innerHTML = 'Create';
+}
+
+window.viewOnMap = viewOnMap;
+window.editEventFromList = editEventFromList;
+window.deleteEventFromList = deleteEventFromList;
     </script>
 </body>
 </html>
