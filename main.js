@@ -1,4 +1,4 @@
-// MeetPoint - Sprint 2 Enhanced with Custom Markers & Full CRUD
+// MeetPoint - Complete with Friends & Profile System
 class MeetPoint {
     constructor() {
         this.API_URL = 'http://localhost:3000/api';
@@ -66,6 +66,88 @@ class MeetPoint {
         window.location.href = 'login.html';
     }
 
+    // --- FRIENDS MANAGEMENT ---
+
+    async getFriends() {
+        if (!this.currentUser) return [];
+        try {
+            const res = await fetch(`${this.API_URL}/friends`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            if (res.ok) {
+                return await res.json();
+            }
+            return [];
+        } catch (error) {
+            console.error('Get friends error:', error);
+            return [];
+        }
+    }
+
+    async addFriend(email) {
+        if (!this.currentUser) return { success: false, message: 'Login required' };
+        try {
+            const res = await fetch(`${this.API_URL}/friends`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({ email })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                return { success: true };
+            }
+            return { success: false, message: data.error || 'Failed to add friend' };
+        } catch (error) {
+            return { success: false, message: 'Network error' };
+        }
+    }
+
+    async removeFriend(friendId) {
+        if (!this.currentUser) return { success: false, message: 'Login required' };
+        try {
+            const res = await fetch(`${this.API_URL}/friends/${friendId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            if (res.ok) {
+                return { success: true };
+            }
+            return { success: false };
+        } catch (error) {
+            return { success: false, message: 'Network error' };
+        }
+    }
+
+    // --- PROFILE MANAGEMENT ---
+
+    async updateProfile(updates) {
+        if (!this.currentUser) return { success: false, message: 'Login required' };
+        try {
+            const res = await fetch(`${this.API_URL}/profile`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify(updates)
+            });
+            const data = await res.json();
+            if (res.ok) {
+                return { success: true, user: data.user };
+            }
+            return { success: false, message: data.error || 'Update failed' };
+        } catch (error) {
+            return { success: false, message: 'Network error' };
+        }
+    }
+
     // --- DATA & MAP ---
 
     async fetchEvents() {
@@ -94,7 +176,6 @@ class MeetPoint {
 
         await this.fetchEvents();
         
-        // Check if we need to center on specific event (from events.html)
         const urlParams = new URLSearchParams(window.location.search);
         const eventId = urlParams.get('eventId');
         if (eventId) {
@@ -118,13 +199,11 @@ class MeetPoint {
         return this.map;
     }
 
-    // NEW: Center map on specific event
     centerOnEvent(eventId) {
         const event = this.events.find(e => e.id === eventId);
         if (event) {
             this.map.setView([event.latitude, event.longitude], 16);
             
-            // Find and open the popup for this event
             const markerObj = this.markers.find(m => m.id === eventId);
             if (markerObj) {
                 markerObj.marker.openPopup();
@@ -138,7 +217,6 @@ class MeetPoint {
         this.events.forEach(event => this.addEventMarker(event));
     }
 
-    // UPDATED: Custom marker creation
     createCustomMarkerIcon(category) {
         const iconConfig = {
             sports: { color: '#10b981', shape: 'pin', icon: '🏃' },
@@ -154,11 +232,9 @@ class MeetPoint {
 
         const config = iconConfig[category] || iconConfig.none;
         
-        // Create custom HTML marker
         let markerHTML;
         
         if (config.shape === 'note') {
-            // Special music note shape
             markerHTML = `
                 <div class="marker-music-note marker-pulse">
                     <div style="color: white; font-size: 20px; font-weight: bold; 
@@ -167,7 +243,6 @@ class MeetPoint {
                 </div>
             `;
         } else if (config.shape === 'circle') {
-            // Circle for food
             markerHTML = `
                 <div style="width: 40px; height: 40px; background: ${config.color}; 
                             border-radius: 50%; border: 3px solid white; 
@@ -178,7 +253,6 @@ class MeetPoint {
                 </div>
             `;
         } else {
-            // Standard pin shape
             markerHTML = `
                 <div class="custom-marker marker-pulse" 
                      style="background: linear-gradient(135deg, ${config.color}, ${this.darkenColor(config.color)});">
@@ -197,7 +271,6 @@ class MeetPoint {
     }
 
     darkenColor(color) {
-        // Simple color darkening for gradient
         const hex = color.replace('#', '');
         const num = parseInt(hex, 16);
         const r = Math.max(0, (num >> 16) - 30);
@@ -229,11 +302,9 @@ class MeetPoint {
             btnText = 'Join Event';
         }
 
-        // Use custom marker
         const customIcon = this.createCustomMarkerIcon(event.category);
         const marker = L.marker([event.latitude, event.longitude], { icon: customIcon }).addTo(this.map);
 
-        // Add delete and edit buttons for creator
         const creatorButtons = isCreator ? `
             <div style="display: flex; gap: 8px; margin-top: 8px;">
                 <button onclick="app.showEditEventModal('${event.id}')" 
@@ -305,7 +376,7 @@ class MeetPoint {
                 },
                 body: JSON.stringify({
                     title, description, 
-                    category: category || 'none', // Default to 'none' if empty
+                    category: category || 'none',
                     datetime,
                     maxParticipants: parseInt(maxParticipants),
                     latitude: location[0], 
@@ -324,7 +395,6 @@ class MeetPoint {
         }
     }
 
-    // NEW: Edit event
     async editEvent(eventId, updates) {
         if (!this.currentUser) return { success: false, message: 'Login required' };
         try {
@@ -347,7 +417,6 @@ class MeetPoint {
         }
     }
 
-    // NEW: Delete event
     async deleteEvent(eventId) {
         if (!this.currentUser) return { success: false, message: 'Login required' };
         
@@ -391,21 +460,17 @@ class MeetPoint {
         } catch (e) { return { success: false, message: 'Network error' }; }
     }
 
-    // NEW: Show edit modal (can be called from anywhere)
     showEditEventModal(eventId) {
         const event = this.events.find(e => e.id === eventId);
         if (!event) return;
 
-        // Store event ID for submission
         window.editingEventId = eventId;
 
-        // Populate form with existing data
         document.getElementById('eventTitle').value = event.title;
         document.getElementById('eventDescription').value = event.description;
         document.getElementById('eventCategory').value = event.category || 'none';
         document.getElementById('maxParticipants').value = event.maxParticipants;
         
-        // Format datetime for input
         const dt = new Date(event.datetime);
         const formatted = new Date(dt.getTime() - dt.getTimezoneOffset() * 60000)
             .toISOString()
@@ -415,14 +480,12 @@ class MeetPoint {
         document.getElementById('eventLocation').value = event.address;
         window.selectedLocation = [event.latitude, event.longitude];
 
-        // Change modal title and button
         const modalTitle = document.querySelector('#createEventModal h3');
         if (modalTitle) modalTitle.textContent = 'Edit Event';
         
         const submitBtn = document.querySelector('#createEventForm button[type="submit"]');
         if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-save mr-2"></i>Update Event';
 
-        // Show modal
         document.getElementById('createEventModal').classList.remove('hidden');
     }
 

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Friends - MeetPoint</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        * { font-family: 'Inter', sans-serif; }
+        
+        .user-dropdown { position: relative; }
+        .dropdown-menu { 
+            position: absolute; 
+            top: 100%; 
+            right: 0; 
+            margin-top: 8px;
+            background: white; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15); 
+            min-width: 180px;
+            display: none;
+            z-index: 1000;
+        }
+        .dropdown-menu.show { display: block; }
+        .dropdown-item { 
+            padding: 10px 16px; 
+            cursor: pointer; 
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .dropdown-item:hover { background: #f3f4f6; }
+        .friend-card { transition: all 0.3s ease; }
+        .friend-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <nav class="bg-white shadow-lg border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <div class="flex items-center space-x-3">
+                    <a href="index.html" class="flex items-center gap-2">
+                        <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-map-marker-alt text-white text-lg"></i>
+                        </div>
+                        <h1 class="text-xl font-bold text-gray-900">MeetPoint</h1>
+                    </a>
+                </div>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="index.html" class="text-gray-700 hover:text-blue-600"><i class="fas fa-map mr-2"></i>Map</a>
+                    <a href="events.html" class="text-gray-700 hover:text-blue-600"><i class="fas fa-calendar-alt mr-2"></i>Events</a>
+                    <a href="friends.html" class="text-blue-600 font-medium border-b-2 border-blue-600 pb-1"><i class="fas fa-users mr-2"></i>Friends</a>
+                    <a href="profile.html" class="text-gray-700 hover:text-blue-600"><i class="fas fa-user mr-2"></i>Profile</a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div id="userStatus" class="hidden user-dropdown">
+                        <div class="flex items-center space-x-2 cursor-pointer" onclick="toggleUserDropdown()">
+                            <img id="userAvatar" src="" alt="Avatar" class="w-8 h-8 rounded-full">
+                            <span id="username" class="text-sm font-medium text-gray-700"></span>
+                            <i class="fas fa-chevron-down text-xs text-gray-500"></i>
+                        </div>
+                        <div id="userDropdown" class="dropdown-menu">
+                            <a href="profile.html" class="dropdown-item">
+                                <i class="fas fa-user"></i>
+                                <span>Profile</span>
+                            </a>
+                            <div class="dropdown-item" onclick="app.logout()">
+                                <i class="fas fa-sign-out-alt"></i>
+                                <span>Logout</span>
+                            </div>
+                        </div>
+                    </div>
+                    <a id="loginBtn" href="login.html" class="bg-blue-600 text-white px-4 py-2 rounded-lg">Login</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="text-center mb-8">
+            <h2 class="text-3xl font-bold text-gray-900 mb-2">Friends</h2>
+            <p class="text-gray-600">Connect with people you meet at events</p>
+        </div>
+
+        <!-- Add Friend Section -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h3 class="text-lg font-semibold mb-4">Add New Friend</h3>
+            <div class="flex gap-4">
+                <input type="email" id="friendEmail" placeholder="Enter friend's email" class="flex-1 px-4 py-2 border rounded-lg">
+                <button onclick="addFriend()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                    <i class="fas fa-user-plus mr-2"></i>Add Friend
+                </button>
+            </div>
+        </div>
+
+        <!-- Friends List -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="friendsList"></div>
+        <div id="emptyState" class="hidden text-center py-12 text-gray-500">
+            <i class="fas fa-users text-6xl mb-4 opacity-20"></i>
+            <p>No friends yet. Start adding some!</p>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!app.currentUser) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            document.getElementById('userStatus').classList.remove('hidden');
+            document.getElementById('loginBtn').classList.add('hidden');
+            document.getElementById('username').textContent = app.currentUser.name;
+            document.getElementById('userAvatar').src = app.currentUser.avatar || 'resources/avatars/default.jpg';
+
+            await loadFriends();
+
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.user-dropdown')) {
+                    document.getElementById('userDropdown')?.classList.remove('show');
+                }
+            });
+        });
+
+        function toggleUserDropdown() {
+            document.getElementById('userDropdown').classList.toggle('show');
+        }
+
+        async function loadFriends() {
+            const friends = await app.getFriends();
+            const list = document.getElementById('friendsList');
+            const empty = document.getElementById('emptyState');
+
+            if (!friends || friends.length === 0) {
+                list.classList.add('hidden');
+                empty.classList.remove('hidden');
+                return;
+            }
+
+            list.classList.remove('hidden');
+            empty.classList.add('hidden');
+
+            list.innerHTML = friends.map(friend => `
+                <div class="friend-card bg-white rounded-lg shadow-md p-6">
+                    <div class="flex items-center space-x-4">
+                        <img src="${friend.avatar || 'resources/avatars/default.jpg'}" alt="${friend.name}" class="w-16 h-16 rounded-full">
+                        <div class="flex-1">
+                            <h3 class="font-semibold text-lg">${friend.name}</h3>
+                            <p class="text-sm text-gray-500">${friend.email}</p>
+                        </div>
+                    </div>
+                    <button onclick="removeFriend('${friend.id}')" class="mt-4 w-full bg-red-100 text-red-700 py-2 rounded-lg hover:bg-red-200">
+                        <i class="fas fa-user-times mr-2"></i>Remove Friend
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        async function addFriend() {
+            const email = document.getElementById('friendEmail').value.trim();
+            if (!email) {
+                alert('Please enter an email');
+                return;
+            }
+
+            const result = await app.addFriend(email);
+            if (result.success) {
+                document.getElementById('friendEmail').value = '';
+                await loadFriends();
+                showNotification('Friend added successfully!', 'success');
+            } else {
+                alert(result.message || 'Failed to add friend');
+            }
+        }
+
+        async function removeFriend(friendId) {
+            if (!confirm('Remove this friend?')) return;
+            
+            const result = await app.removeFriend(friendId);
+            if (result.success) {
+                await loadFriends();
+                showNotification('Friend removed', 'success');
+            }
+        }
+
+        function showNotification(message, type) {
+            const notif = document.createElement('div');
+            notif.className = `fixed top-24 right-4 z-50 p-4 rounded-lg shadow-lg ${type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white`;
+            notif.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check' : 'fa-exclamation'} mr-2"></i>${message}`;
+            document.body.appendChild(notif);
+            setTimeout(() => document.body.removeChild(notif), 3000);
+        }
+
+        window.toggleUserDropdown = toggleUserDropdown;
+    </script>
+</body>
+</html>

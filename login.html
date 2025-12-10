@@ -5,16 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Login - MeetPoint</title>
 
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
-
-    <!-- Anime.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
 
-    <!-- Custom Styles -->
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
@@ -94,18 +88,20 @@
         }
 
         .input-group input {
-            padding-left: 45px; 
+            padding-left: 45px;
+            padding-right: 45px; /* Extra space for password toggle */
+            height: 48px; /* Increased height */
         }
 
         .password-toggle {
             position: absolute;
-            right: 12px;
+            right: 16px;
             top: 50%;
             transform: translateY(-50%);
             cursor: pointer;
             color: #9ca3af;
         }
-        /* Floating Shapes | location shapes */
+
         .floating-shapes {
             position: absolute;
             width: 100%;
@@ -113,13 +109,13 @@
             overflow: hidden;
             z-index: 0;
         }
-        /* Floating Shapes | animation,the shape can move on the background */
+
         .shape {
             position: absolute;
             opacity: 0.1;
             animation: float 6s ease-in-out infinite;
         }
-        /* Floating Shapes | location of each shape */
+
         .shape:nth-child(1) {
             top: 10%;
             left: 10%;
@@ -153,9 +149,8 @@
     </style>
 </head>
 
-<!-- set the background with gradient,hight of screen -->
 <body class="gradient-bg min-h-screen flex items-center justify-center relative">
-    <!-- Floating Shapes | create the animation on background,shape can move -->
+    <!-- Floating Shapes -->
     <div class="floating-shapes">
         <div class="shape w-20 h-20 bg-white rounded-full"></div>
         <div class="shape w-16 h-16 bg-white rounded-lg rotate-45"></div>
@@ -163,7 +158,7 @@
         <div class="shape w-12 h-12 bg-white rounded-lg rotate-12"></div>
     </div>
 
-    <!-- Logo and Brand | the logo located in the top left corner and the text around the logo -->
+    <!-- Logo and Brand -->
     <div class="absolute top-8 left-8 flex items-center space-x-3 z-10">
         <div class="w-12 h-12 bg-white bg-opacity-20 rounded-lg flex items-center justify-center backdrop-blur-sm">
             <i class="fas fa-map-marker-alt text-white text-xl"></i>
@@ -174,7 +169,7 @@
         </div>
     </div>
 
-    <!-- Main Container | container in the top center of the page,only text -->
+    <!-- Main Container -->
     <div class="container mx-auto px-4 z-10">
         <div class="max-w-6xl mx-auto">
             <!-- Welcome Text -->
@@ -188,7 +183,7 @@
                 </p>
             </div>
 
-            <!-- Forms Container | the main container created for login and registration forms,also in this container we use tailwind to shadow and border radius -->
+            <!-- Forms Container -->
             <div class="flex justify-center">
                 <div class="bg-white rounded-2xl shadow-2xl overflow-hidden max-w-4xl w-full">
                     <!-- Login Form -->
@@ -201,20 +196,21 @@
                                 Welcome back! Please enter your details.
                             </p>
                         </div>
-                        <!-- Login Form Elements username and password-->
+
                         <form id="loginFormElement" class="space-y-6">
                             <div class="input-group">
-                                <i class="fas fa-user"></i>
+                                <i class="fas fa-envelope"></i>
                                 <input
-                                    type="text"
+                                    type="email"
                                     id="loginUsername"
-                                    placeholder="Username or Email"
+                                    placeholder="Email"
                                     required
                                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                                 />
                             </div>
 
                             <div class="input-group">
+                                <i class="fas fa-lock"></i>
                                 <input
                                     type="password"
                                     id="loginPassword"
@@ -259,27 +255,6 @@
                                 Create Account
                             </button>
                         </div>
-
-                        <!-- Demo Credentials -->
-                        <div class="mt-6 p-4 bg-gray-50 rounded-lg">
-                            <p class="text-sm text-gray-600 mb-2">
-                                <strong>Demo Accounts:</strong>
-                            </p>
-                            <div class="text-xs text-gray-500 space-y-1">
-                                <p>
-                                    Username: <code>demo_user</code> | Password:
-                                    <code>demo123</code>
-                                </p>
-                                <p>
-                                    Username: <code>gym_partner</code> | Password:
-                                    <code>gym123</code>
-                                </p>
-                                <p>
-                                    Username: <code>study_buddy</code> | Password:
-                                    <code>study123</code>
-                                </p>
-                            </div>
-                        </div>
                     </div>
 
                     <!-- Registration Form -->
@@ -319,10 +294,11 @@
                             </div>
 
                             <div class="input-group">
+                                <i class="fas fa-lock"></i>
                                 <input
                                     type="password"
                                     id="registerPassword"
-                                    placeholder="Password"
+                                    placeholder="Password (min 6 characters)"
                                     required
                                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                                 />
@@ -333,6 +309,7 @@
                             </div>
 
                             <div class="input-group">
+                                <i class="fas fa-lock"></i>
                                 <input
                                     type="password"
                                     id="confirmPassword"
@@ -389,23 +366,18 @@
         </div>
     </div>
 
-    <!-- Scripts -->
     <script src="main.js"></script>
 
     <script>
-        /*function that wait until the page download */
         document.addEventListener('DOMContentLoaded', function () {
             setupFormHandlers()
 
-            // If user is already logged in, redirect to main page
             if (app.currentUser) {
                 window.location.href = 'index.html'
             }
         })
 
-        /*  function to button click(create account and sign in) works correct  */
         function setupFormHandlers() {
-            // Login form handler
             document
                 .getElementById('loginFormElement')
                 .addEventListener('submit', function (e) {
@@ -421,19 +393,15 @@
                 })
         }
 
-        // gets the values from the input fields and check if the user exist or not
-// UPDATED: Async Login Handler
-async function handleLogin() {
+        async function handleLogin() {
             const username = document.getElementById('loginUsername').value;
             const password = document.getElementById('loginPassword').value;
 
-            // Show loading state
             const button = document.querySelector('#loginFormElement button[type="submit"]');
             const originalText = button.innerHTML;
             button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Connecting...';
             button.disabled = true;
 
-            // Wait for backend response
             const result = await app.login(username, password);
 
             if (result.success) {
@@ -444,7 +412,6 @@ async function handleLogin() {
             } else {
                 showNotification(result.message, 'error');
                 
-                // Reset button
                 button.innerHTML = originalText;
                 button.disabled = false;
 
@@ -457,15 +424,12 @@ async function handleLogin() {
             }
         }
 
-        //gets the values from the input fields and check if the user can register or not also if the password match
-        // UPDATED: Async Registration Handler
         async function handleRegistration() {
             const username = document.getElementById('registerUsername').value;
             const email = document.getElementById('registerEmail').value;
             const password = document.getElementById('registerPassword').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
 
-            // 1. Validation
             if (password !== confirmPassword) {
                 showNotification('Passwords do not match', 'error');
                 return;
@@ -475,20 +439,16 @@ async function handleLogin() {
                 return;
             }
 
-            // 2. Show Loading
             const btn = document.querySelector('#registerFormElement button[type="submit"]');
             const originalText = btn.innerHTML;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
             btn.disabled = true;
 
-            // 3. Call API (CRITICAL: use 'await')
             const result = await app.register(username, email, password);
 
-            // 4. Reset Button
             btn.innerHTML = originalText;
             btn.disabled = false;
 
-            // 5. Handle Result
             if (result.success) {
                 showNotification('Registration successful! Please login.', 'success');
                 setTimeout(() => {
@@ -496,7 +456,6 @@ async function handleLogin() {
                     showLoginForm();
                 }, 1500);
             } else {
-                // If result.message is missing, show generic error
                 showNotification(result.message || 'Registration failed', 'error');
                 anime({
                     targets: '#registerForm',
@@ -507,12 +466,10 @@ async function handleLogin() {
             }
         }
 
-        // change between login and register form with animation log in -> register
         function showRegisterForm() {
             document.getElementById('loginForm').classList.add('hidden')
             document.getElementById('registerForm').classList.remove('hidden')
 
-            // Animation
             anime({
                 targets: '#registerForm',
                 opacity: [0, 1],
@@ -522,12 +479,10 @@ async function handleLogin() {
             })
         }
 
-        // change between login and register form with animation register -> login
         function showLoginForm() {
             document.getElementById('registerForm').classList.add('hidden')
             document.getElementById('loginForm').classList.remove('hidden')
 
-            // Animation
             anime({
                 targets: '#loginForm',
                 opacity: [0, 1],
@@ -537,10 +492,9 @@ async function handleLogin() {
             })
         }
 
-        // change the password field from password to text and show the eye icon
         function togglePassword(inputId) {
             const input = document.getElementById(inputId)
-            const icon = input.nextElementSibling
+            const icon = input.parentElement.querySelector('.password-toggle')
 
             if (input.type === 'password') {
                 input.type = 'text'
@@ -553,7 +507,6 @@ async function handleLogin() {
             }
         }
 
-        //create notification function for success and error messages in the top right corner
         function showNotification(message, type = 'info') {
             const notification = document.createElement('div')
             notification.className = `fixed top-8 right-8 z-50 p-4 rounded-lg shadow-lg transform transition-all duration-300 ${
@@ -578,12 +531,10 @@ async function handleLogin() {
 
             document.body.appendChild(notification)
 
-            // Animate in
             setTimeout(() => {
                 notification.style.transform = 'translateX(0)'
             }, 100)
 
-            // Remove after 3 seconds
             setTimeout(() => {
                 notification.style.transform = 'translateX(100%)'
                 setTimeout(() => {
@@ -592,7 +543,6 @@ async function handleLogin() {
             }, 3000)
         }
 
-        // Global functions
         window.showRegisterForm = showRegisterForm
         window.showLoginForm = showLoginForm
         window.togglePassword = togglePassword
