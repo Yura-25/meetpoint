@@ -8,6 +8,8 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { authenticateToken } from './middleware/auth.js';
 import eventsRouter from './routes/events.js';
+import friendsRouter from './routes/friends.js';  // ✅ ADDED
+import profileRouter from './routes/profile.js';  // ✅ ADDED
 
 dotenv.config();
 
@@ -146,21 +148,21 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 // ===== Get current user (protected route) =====
-// This is the endpoint we use to test if our token works!
 app.get('/api/auth/me', authenticateToken, (req, res) => {
-  // If authenticateToken succeeds, it attaches the user to req.user
   res.json({ user: req.user });
 });
 
-// ===== Events routes =====
+// ===== Routes =====
 app.use('/api/events', eventsRouter);
+app.use('/api/friends', friendsRouter);    // ✅ ADDED
+app.use('/api/profile', profileRouter);    // ✅ ADDED
 
 // Basic route
 app.get('/', (req, res) => {
   res.json({ message: 'MeetPoint API (Sprint 1) is running!' });
 });
 
-// Socket.io connection (good to show it's ready for next sprint)
+// Socket.io connection
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
